@@ -1,5 +1,5 @@
 import { Protect, useClerk, useUser } from '@clerk/clerk-react';
-import { Eraser, FileText, Hash, House, Image, LogOut, Scissors, SquarePen, Users } from 'lucide-react';
+import { AlertTriangle, Eraser, FileText, Hash, House, Image, LogOut, Scissors, SquarePen, Users } from 'lucide-react';
 import React from 'react'
 import { NavLink } from 'react-router-dom';
 
@@ -11,6 +11,7 @@ const navItems = [
     { to: '/ai/remove-background', label: 'Policy Checks', Icon: Scissors },
     { to: '/ai/remove-object', label: 'Audit Trail', Icon: Eraser },
     { to: '/ai/review-resume', label: 'Risk Review', Icon: FileText },
+    { to: '/ai/anomaly-task', label: 'Skill Task', Icon: AlertTriangle },
     { to: '/ai/community', label: 'Team Access', Icon: Users },   
 ]
 

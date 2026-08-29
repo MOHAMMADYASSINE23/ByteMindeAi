@@ -10,6 +10,7 @@ import RemoveBackground from './page/RemoveBackground'
 import RemoveObject from './page/RemoveObject'
 import ReviewResume from './page/ReviewResume'
 import Community from './page/Community'
+import AnomalyTask from './page/AnomalyTask'
 import { useAuth } from '@clerk/clerk-react'
 import { useEffect } from 'react'
 
@@ -31,6 +32,7 @@ const App = () => {
           <Route path="remove-background" element={<RemoveBackground />} />
           <Route path="remove-object" element={<RemoveObject />} />
           <Route path="review-resume" element={<ReviewResume />} />
+          <Route path="anomaly-task" element={<AnomalyTask />} />
           <Route path="community" element={<Community />} />
         </Route>
       </Routes> 

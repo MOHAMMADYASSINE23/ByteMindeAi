@@ -5,13 +5,13 @@ import { NavLink } from 'react-router-dom';
 
 const navItems = [
     { to: '/ai', label: 'Dashboard', Icon: House },
-    { to: '/ai/write-article', label: 'Write Article', Icon: SquarePen },
-    { to: '/ai/blog-titles', label: 'Blog Titles', Icon: Hash },
-    { to: '/ai/generate-images', label: 'Generate Images', Icon: Image },
-    { to: '/ai/remove-background', label: 'Remove Background', Icon: Scissors },
-    { to: '/ai/remove-object', label: 'Remove Object', Icon: Eraser },
-    { to: '/ai/review-resume', label: 'Review Resume', Icon: Hash },
-    { to: '/ai/community', label: 'Community', Icon: Users },   
+    { to: '/ai/write-article', label: 'Upload Invoice', Icon: SquarePen },
+    { to: '/ai/blog-titles', label: 'Expense Claims', Icon: Hash },
+    { to: '/ai/generate-images', label: 'Historical Trends', Icon: Image },
+    { to: '/ai/remove-background', label: 'Policy Checks', Icon: Scissors },
+    { to: '/ai/remove-object', label: 'Audit Trail', Icon: Eraser },
+    { to: '/ai/review-resume', label: 'Risk Review', Icon: FileText },
+    { to: '/ai/community', label: 'Team Access', Icon: Users },   
 ]
 
 const Sidebar = ({ sidebar, setSidebar}) => {

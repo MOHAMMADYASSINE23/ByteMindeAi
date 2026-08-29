@@ -5,7 +5,7 @@ import star_icon from "./star_icon.svg";
 import star_dull_icon from "./star_dull_icon.svg";
 import profile_img_1 from "./profile_img_1.png";
 import arrow_icon from "./arrow_icon.svg";
-import { SquarePen, Hash, Image, Eraser, Scissors, FileText } from 'lucide-react'
+import { FileText, ReceiptText, ShieldCheck, ChartColumn, SearchCheck, BadgeAlert } from 'lucide-react'
 import ai_gen_img_1 from "./ai_gen_img_1.png";
 import ai_gen_img_2 from "./ai_gen_img_2.png";
 import ai_gen_img_3 from "./ai_gen_img_3.png";
@@ -22,46 +22,46 @@ export const assets = {
 
 export const AiToolsData = [
     {
-        title: 'AI Article Writer',
-        description: 'Generate high-quality, engaging articles on any topic with our AI writing technology.',
-        Icon: SquarePen,
+        title: 'Invoice Upload',
+        description: 'Scan PDF and image invoices, extract structured line items, and standardize the data automatically.',
+        Icon: FileText,
         bg: { from: '#3588F2', to: '#0BB0D7' },
         path: '/ai/write-article'
     },
     {
-        title: 'Blog Title Generator',
-        description: 'Find the perfect, catchy title for your blog posts with our AI-powered generator.',
-        Icon: Hash,
+        title: 'Historical Pricing',
+        description: 'Compare each item against vendor history to detect pricing drift, duplicates, and suspicious changes.',
+        Icon: ChartColumn,
         bg: { from: '#B153EA', to: '#E549A3' },
         path: '/ai/blog-titles'
     },
     {
-        title: 'AI Image Generation',
-        description: 'Create stunning visuals with our AI image generation tool, Experience the power of AI ',
-        Icon: Image,
+        title: 'Risk Review',
+        description: 'Score each invoice for compliance issues, mismatches, and unusual activity before approval.',
+        Icon: ShieldCheck,
         bg: { from: '#20C363', to: '#11B97E' },
+        path: '/ai/review-resume'
+    },
+    {
+        title: 'Expense Checks',
+        description: 'Catch missing receipts, duplicate claims, and policy violations in submitted expenses.',
+        Icon: SearchCheck,
+        bg: { from: '#F76C1C', to: '#F04A3C' },
         path: '/ai/generate-images'
     },
     {
-        title: 'Background Removal',
-        description: 'Effortlessly remove backgrounds from your images with our AI-driven tool.',
-        Icon: Eraser,
-        bg: { from: '#F76C1C', to: '#F04A3C' },
+        title: 'Policy Rules',
+        description: 'Run deterministic business rules for totals, tax, category logic, and approval thresholds.',
+        Icon: BadgeAlert,
+        bg: { from: '#5C6AF1', to: '#427DF5' },
         path: '/ai/remove-background'
     },
     {
-        title: 'Object Removal',
-        description: 'Remove unwanted objects from your images seamlessly with our AI object removal tool.',
-        Icon: Scissors,
-        bg: { from: '#5C6AF1', to: '#427DF5' },
-        path: '/ai/remove-object'
-    },
-    {
-        title: 'Resume Reviewer',
-        description: 'Get your resume reviewed by AI to improve your chances of landing your dream job.',
-        Icon: FileText,
+        title: 'Audit Trail',
+        description: 'Keep a reviewable record of every decision, risk reason, and approver action for compliance.',
+        Icon: ReceiptText,
         bg: { from: '#12B7AC', to: '#08B6CE' },
-        path: '/ai/review-resume'
+        path: '/ai/community'
     }
 ]
 

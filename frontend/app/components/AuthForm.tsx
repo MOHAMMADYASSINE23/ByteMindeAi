@@ -7,36 +7,63 @@ interface AuthFormData {
 }
 
 interface AuthFormProps {
-    title: string;
+  title: string;
   onSubmit: (data: AuthFormData) => void;
-    isLoading?: boolean;
-    error?: string;
-    fields: Array<{
-        name: string;
-        label: string;
-        type: "email" | "password" | "text";
-        placeholder?: string;
-    }>;
-    submitButtonText: string;
+  isLoading?: boolean;
+  error?: string;
+  fields: Array<{
+    name: string;
+    label: string;
+    type: "email" | "password" | "text";
+    placeholder?: string;
+  }>;
+  submitButtonText: string;
 }
 
-export default function AuthForm({ title, onSubmit, isLoading = false, error, fields, submitButtonText }: AuthFormProps) {
-    const [formData, setFormData] = useState<Record<string, string>>({});
+export default function AuthForm({
+  title,
+  onSubmit,
+  isLoading = false,
+  error,
+  fields,
+  submitButtonText,
+}: AuthFormProps) {
+  const [formData, setFormData] = useState<AuthFormData>({});
+  const [validationError, setValidationError] = useState("");
 
-    const handleChange = (name: string, value: string) => {
-        setFormData((prev) => ({ ...prev, [name] : value}));
-    };
+  const handleChange = (name: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    setValidationError("");
+  };
 
-    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-        event.preventDefault();
-        onSubmit(formData);
-    };
-      return (
-    <form onSubmit={handleSubmit} className="space-y-6">
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const missingField = fields.find((field) => !formData[field.name]?.trim());
+    if (missingField) {
+      setValidationError(`${missingField.label} is required.`);
+      return;
+    }
+
+    const email = formData.email?.trim();
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setValidationError("Enter a valid email address.");
+      return;
+    }
+
+    if (formData.confirmPassword && formData.password !== formData.confirmPassword) {
+      setValidationError("Passwords do not match.");
+      return;
+    }
+
+    setValidationError("");
+    onSubmit(formData);
+  };
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-6" noValidate>
       <div>
-        <h1 className="text-2xl font-bold">
-          {title}
-        </h1>
+        <h1 className="text-2xl font-bold">{title}</h1>
       </div>
 
       {fields.map((field) => (
@@ -54,6 +81,7 @@ export default function AuthForm({ title, onSubmit, isLoading = false, error, fi
             type={field.type}
             placeholder={field.placeholder}
             value={formData[field.name] ?? ""}
+            required
             onChange={(event) =>
               handleChange(field.name, event.target.value)
             }
@@ -62,9 +90,9 @@ export default function AuthForm({ title, onSubmit, isLoading = false, error, fi
         </div>
            ))}
 
-      {error && (
-        <p className="text-sm text-red-500">
-          {error}
+      {(validationError || error) && (
+        <p role="alert" className="text-sm text-red-500">
+          {validationError || error}
         </p>
       )}
 

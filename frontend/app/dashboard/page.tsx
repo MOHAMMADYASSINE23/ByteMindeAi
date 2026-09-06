@@ -1,3 +1,5 @@
+import Link from "next/link";
+
 const stats = [
   { label: "Total invoices", value: "1,284", tone: "bg-indigo-50 text-indigo-700" },
   { label: "Pending review", value: "18", tone: "bg-amber-50 text-amber-700" },
@@ -23,9 +25,9 @@ export default function DashboardPage() {
             </p>
             <h1 className="mt-2 text-3xl font-bold text-slate-900">Dashboard</h1>
           </div>
-          <button className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
+          <Link href="/reviews/new" className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
             New review
-          </button>
+          </Link>
         </header>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">

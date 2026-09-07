@@ -108,9 +108,44 @@ export default function NewReviewPage() {
         </div>
 
         {submitted && (
-          <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 p-5 text-emerald-900">
-            <p className="font-semibold">Review queued for analysis.</p>
-            <p className="mt-1 text-sm">The next step will connect this form to document extraction and risk scoring.</p>
+          <div className="mt-6 rounded-2xl border border-amber-200 bg-white p-6 shadow-sm md:p-8">
+            <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
+              <div>
+                <p className="text-sm font-medium uppercase tracking-[0.2em] text-amber-600">Audit result</p>
+                <h2 className="mt-2 text-2xl font-bold text-slate-900">Manual review recommended</h2>
+                <p className="mt-2 text-sm text-slate-600">
+                  {vendor} needs a finance team member to review the findings before approval.
+                </p>
+              </div>
+              <div className="rounded-xl bg-amber-50 px-5 py-4 text-center">
+                <p className="text-xs font-semibold uppercase tracking-[0.15em] text-amber-700">Risk score</p>
+                <p className="mt-1 text-3xl font-bold text-amber-900">72/100</p>
+              </div>
+            </div>
+
+            <div className="mt-6 grid gap-3 md:grid-cols-3">
+              <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
+                <p className="text-sm font-semibold text-rose-900">Price anomaly</p>
+                <p className="mt-1 text-sm text-rose-800">Total is above the historical vendor range.</p>
+              </div>
+              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+                <p className="text-sm font-semibold text-amber-900">Duplicate check</p>
+                <p className="mt-1 text-sm text-amber-800">One similar invoice needs confirmation.</p>
+              </div>
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
+                <p className="text-sm font-semibold text-emerald-900">Required fields</p>
+                <p className="mt-1 text-sm text-emerald-800">Vendor and total were captured successfully.</p>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-3">
+              <button className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-700">
+                Send for approval
+              </button>
+              <Link href="/dashboard" className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                Back to dashboard
+              </Link>
+            </div>
           </div>
         )}
       </div>

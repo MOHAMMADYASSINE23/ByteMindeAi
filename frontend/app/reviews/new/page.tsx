@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import ProtectedRoute from "../../components/ProtectedRoute";
 
 export default function NewReviewPage() {
   const [fileName, setFileName] = useState("");
@@ -15,7 +16,8 @@ export default function NewReviewPage() {
   };
 
   return (
-    <main className="min-h-screen bg-slate-100 px-6 py-8 md:px-10">
+    <ProtectedRoute>
+      <main className="min-h-screen bg-slate-100 px-6 py-8 md:px-10">
       <div className="mx-auto max-w-4xl">
         <Link href="/dashboard" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
           Back to dashboard
@@ -149,6 +151,7 @@ export default function NewReviewPage() {
           </div>
         )}
       </div>
-    </main>
+      </main>
+    </ProtectedRoute>
   );
 }

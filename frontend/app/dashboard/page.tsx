@@ -1,4 +1,11 @@
+"use client";
+
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
+import ProtectedRoute from "../components/ProtectedRoute";
+import { clearSession, getSession } from "../lib/auth";
+import type { SessionUser } from "../lib/auth";
 
 const stats = [
   { label: "Total invoices", value: "1,284", tone: "bg-indigo-50 text-indigo-700" },
@@ -15,8 +22,21 @@ const recentInvoices = [
 ];
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const [user, setUser] = useState<SessionUser | null>(null);
+
+  useEffect(() => {
+    setUser(getSession());
+  }, []);
+
+  const handleLogout = () => {
+    clearSession();
+    router.replace("/login");
+  };
+
   return (
-    <main className="min-h-screen bg-slate-100 p-6 md:p-10">
+    <ProtectedRoute>
+      <main className="min-h-screen bg-slate-100 p-6 md:p-10">
       <div className="mx-auto max-w-7xl">
         <header className="mb-8 flex items-center justify-between">
           <div>
@@ -24,10 +44,16 @@ export default function DashboardPage() {
               Finance overview
             </p>
             <h1 className="mt-2 text-3xl font-bold text-slate-900">Dashboard</h1>
+            <p className="mt-1 text-sm text-slate-500">Signed in as {user?.email}</p>
           </div>
-          <Link href="/reviews/new" className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
-            New review
-          </Link>
+          <div className="flex gap-3">
+            <Link href="/reviews/new" className="rounded-xl bg-slate-900 px-4 py-2 text-sm font-semibold text-white">
+              New review
+            </Link>
+            <button onClick={handleLogout} className="rounded-xl border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700">
+              Log out
+            </button>
+          </div>
         </header>
 
         <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -103,6 +129,7 @@ export default function DashboardPage() {
           </div>
         </section>
       </div>
-    </main>
+      </main>
+    </ProtectedRoute>
   );
 }

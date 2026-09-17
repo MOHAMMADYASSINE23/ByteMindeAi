@@ -1,9 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import AuthForm from "../components/AuthForm";
+import { saveSession } from "../lib/auth";
 
 export default function LoginPage() {
+  const router = useRouter();
+
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
       <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-8 shadow-sm">
@@ -22,7 +26,10 @@ export default function LoginPage() {
             { name: "password", label: "Password", type: "password", placeholder: "••••••••" },
           ]}
           submitButtonText="Login"
-          onSubmit={(data) => console.log(data)}
+          onSubmit={(data) => {
+            saveSession({ name: data.email.split("@")[0], email: data.email });
+            router.push("/dashboard");
+          }}
         />
 
         <p className="mt-6 text-center text-sm text-slate-500">

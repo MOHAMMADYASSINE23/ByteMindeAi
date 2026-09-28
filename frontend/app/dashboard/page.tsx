@@ -26,11 +26,11 @@ export default function DashboardPage() {
   const [user, setUser] = useState<SessionUser | null>(null);
 
   useEffect(() => {
-    setUser(getSession());
+    getSession().then(setUser);
   }, []);
 
-  const handleLogout = () => {
-    clearSession();
+  const handleLogout = async () => {
+    await clearSession();
     router.replace("/login");
   };
 

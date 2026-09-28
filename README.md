@@ -1,41 +1,45 @@
 # ByteMindeAi
 
-ByteMindeAi is being pivoted into an invoice and expense auditor platform.
+Invoice Auditor is a finance workflow prototype for reviewing invoices and identifying potential risk before approval.
 
-## Product direction
+## Project structure
 
-The app focuses on helping finance teams detect:
-- duplicate invoices
-- suspicious pricing patterns
-- missing fields and mismatched totals
-- policy violations
-- approval risks before payment is released
+- `frontend/` — Next.js App Router interface
+- `server/` — Express API for custom authentication and PostgreSQL sessions
 
-## MVP workflow
+The previous Vite AI-tools client and its unrelated generation APIs have been removed.
 
-1. Upload invoice or receipt
-2. Extract structured line-item data
-3. Run deterministic validation rules
-4. Compare against historical vendor pricing
-5. Score risk using AI explanation and business logic
-6. Human review and approval
-7. Save complete audit history
+## Run locally
 
-## Tech stack
+Install dependencies once:
 
-- React + Vite frontend
-- Node.js + Express backend
-- PostgreSQL for invoice and audit data
-- OCR and document extraction services
-- AI-powered explanation and review support
-- Clerk authentication and role-based access
+```bash
+cd server && npm install
+cd ../frontend && npm install
+```
 
-## Skill-building focus
+Set `server/.env` with `DATABASE_URL` for a Neon/PostgreSQL database. Optional values are `PORT` (defaults to `5000`) and `FRONTEND_URL` (defaults to `http://localhost:3000,http://localhost:5173`). The server creates the `users` and `user_sessions` tables on startup.
 
-This project is a strong learning path for:
-- product design and workflow thinking
-- dashboard UI design
-- data modeling and validation logic
-- anomaly detection and statistical checks
-- secure authentication and RBAC
-- business-focused AI integration
+Start the API in one terminal:
+
+```bash
+cd server
+npm run server
+```
+
+Start the web app in another terminal:
+
+```bash
+cd frontend
+npm run dev
+```
+
+Open `http://localhost:3000`. Signup and login use bcrypt password hashes and an HTTP-only session cookie. Set `NEXT_PUBLIC_API_URL` in the frontend deployment to the deployed API origin when not using localhost.
+
+## Current scope
+
+Authentication and protected frontend routes are connected to the API. Invoice audit results are still demonstration data; document extraction, persistent invoice records, risk scoring, and approval actions are not yet implemented.
+
+## Credential safety
+
+Keep real credentials in ignored local env files and use `server/.env.example` as the template. Credentials previously committed or shared must be revoked and rotated in their provider dashboards; deleting a key from the current file does not remove it from Git history.

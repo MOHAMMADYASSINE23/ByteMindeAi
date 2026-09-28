@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import AuthForm from "../components/AuthForm";
-import { saveSession } from "../lib/auth";
+import { login } from "../lib/auth";
 
 export default function LoginPage() {
   const router = useRouter();
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
@@ -26,9 +29,19 @@ export default function LoginPage() {
             { name: "password", label: "Password", type: "password", placeholder: "••••••••" },
           ]}
           submitButtonText="Login"
-          onSubmit={(data) => {
-            saveSession({ name: data.email.split("@")[0], email: data.email });
-            router.push("/dashboard");
+          error={error}
+          isLoading={isLoading}
+          onSubmit={async (data) => {
+            setError("");
+            setIsLoading(true);
+            try {
+              await login(data.email, data.password);
+              router.push("/dashboard");
+            } catch (requestError) {
+              setError(requestError instanceof Error ? requestError.message : "Could not sign in.");
+            } finally {
+              setIsLoading(false);
+            }
           }}
         />
 

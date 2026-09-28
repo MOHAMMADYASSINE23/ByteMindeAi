@@ -1,11 +1,12 @@
-import { clerkClient } from "@clerk/express";
+import { hashToken, SESSION_COOKIE } from "../lib/session.js";
+import sql from "../configs/db.js";
 
 // Simple in-memory rate limiter
 const rateLimitStore = new Map();
 
 export const rateLimiter = (maxRequests = 10, windowMs = 15 * 60 * 1000) => { // 10 requests per 15 minutes
     return (req, res, next) => {
-        const key = req.auth()?.userId || req.ip || 'anonymous';
+        const key = req.user?.id || req.ip || 'anonymous';
         const now = Date.now();
 
         if (!rateLimitStore.has(key)) {
@@ -45,24 +46,44 @@ export const rateLimiter = (maxRequests = 10, windowMs = 15 * 60 * 1000) => { //
     };
 };
 
-export const auth =  async(req, res, next) => {
-    try{
-        const {userId, has} = await req.auth();
-        const hasPremiumPlan = await has({plan: 'premium'});
-        const user = await clerkClient.users.getUser(userId);
+export const requireAuth = async (req, res, next) => {
+    const token = req.cookies?.[SESSION_COOKIE];
+    if (!token) {
+        return res.status(401).json({ success: false, message: 'Authentication required.' });
+    }
 
-        if(!hasPremiumPlan && user.publicMetadata.free_usage){
-            req.free_usage = user.publicMetadata.free_usage;
-        } else{
-            await clerkClient.users.updateUserMetadata(userId, {
-                privateMetadata: {free_usage: 0}
+    try {
+        const [user] = await sql`SELECT users.id, users.name, users.email, users.plan,
+                users.free_usage, user_sessions.id AS session_id
+            FROM user_sessions
+            JOIN users ON users.id = user_sessions.user_id
+            WHERE user_sessions.token_hash = ${hashToken(token)}
+              AND user_sessions.expires_at > NOW()
+            LIMIT 1`;
+
+        if (!user) {
+            res.clearCookie(SESSION_COOKIE, {
+                httpOnly: true,
+                secure: process.env.NODE_ENV === 'production',
+                sameSite: 'lax',
+                path: '/',
             });
-            req.free_usage = 0;
+            return res.status(401).json({ success: false, message: 'Session expired. Sign in again.' });
         }
-        req.plan = hasPremiumPlan ? 'premium' : 'free';
+
+        req.user = {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            plan: user.plan,
+            freeUsage: user.free_usage,
+            sessionId: user.session_id,
+        };
         next();
     } catch (error) {
-        res.status(401).json({ success: false, message: error.message });
-
+        console.error('Session validation failed:', error.message);
+        res.status(500).json({ success: false, message: 'Could not validate session.' });
     }
-}
+};
+
+export const auth = requireAuth;

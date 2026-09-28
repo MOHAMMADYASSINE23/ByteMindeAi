@@ -1,29 +1,44 @@
-export const SESSION_KEY = "invoice-auditor-session";
-
 export interface SessionUser {
+  id: string;
   name: string;
   email: string;
+  plan: string;
 }
 
-export function saveSession(user: SessionUser) {
-  window.localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000";
+
+async function authRequest(path: string, body?: Record<string, string>) {
+  const response = await fetch(`${API_BASE_URL}/api/auth/${path}`, {
+    method: body ? "POST" : "GET",
+    credentials: "include",
+    headers: body ? { "Content-Type": "application/json" } : undefined,
+    body: body ? JSON.stringify(body) : undefined,
+    cache: "no-store",
+  });
+
+  if (response.status === 204) return null;
+  const payload = await response.json();
+  if (!response.ok) throw new Error(payload.message || "Authentication request failed.");
+  return payload;
 }
 
-export function getSession(): SessionUser | null {
-  const storedSession = window.localStorage.getItem(SESSION_KEY);
+export async function login(email: string, password: string) {
+  return authRequest("login", { email, password });
+}
 
-  if (!storedSession) {
-    return null;
-  }
+export async function signup(name: string, email: string, password: string) {
+  return authRequest("signup", { name, email, password });
+}
 
+export async function getSession(): Promise<SessionUser | null> {
   try {
-    return JSON.parse(storedSession) as SessionUser;
+    const payload = await authRequest("me");
+    return payload.user as SessionUser;
   } catch {
-    window.localStorage.removeItem(SESSION_KEY);
     return null;
   }
 }
 
-export function clearSession() {
-  window.localStorage.removeItem(SESSION_KEY);
+export async function clearSession() {
+  await authRequest("logout", {});
 }

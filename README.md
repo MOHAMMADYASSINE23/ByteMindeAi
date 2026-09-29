@@ -38,7 +38,9 @@ Open `http://localhost:3000`. Signup and login use bcrypt password hashes and an
 
 ## Current scope
 
-Authentication and protected frontend routes are connected to the API. Invoice audit results are still demonstration data; document extraction, persistent invoice records, risk scoring, and approval actions are not yet implemented.
+Authentication and protected frontend routes use the API. Invoice metadata and audit findings are persisted per user. The current deterministic checks flag repeated invoice numbers and totals at or above $5,000/$10,000; these are starter rules, not historical price analysis or document extraction. File bytes are not uploaded or stored yet, and approval/rejection actions are not implemented.
+
+Run backend unit tests with `cd server && npm test`. With the API and database running, run `cd server && npm run smoke:api` for a temporary end-to-end signup, invoice, duplicate-check, and logout test; it deletes its temporary account afterward.
 
 ## Credential safety
 

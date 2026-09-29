@@ -6,33 +6,32 @@ import { useEffect, useState } from "react";
 import ProtectedRoute from "../components/ProtectedRoute";
 import { clearSession, getSession } from "../lib/auth";
 import type { SessionUser } from "../lib/auth";
-
-const stats = [
-  { label: "Total invoices", value: "1,284", tone: "bg-indigo-50 text-indigo-700" },
-  { label: "Pending review", value: "18", tone: "bg-amber-50 text-amber-700" },
-  { label: "High risk", value: "7", tone: "bg-rose-50 text-rose-700" },
-  { label: "Approved", value: "94%", tone: "bg-emerald-50 text-emerald-700" },
-];
-
-const recentInvoices = [
-  { id: "INV-10482", vendor: "ABC Supplies", amount: "$935", risk: "High" },
-  { id: "INV-10491", vendor: "XYZ Electronics", amount: "$1,240", risk: "Medium" },
-  { id: "INV-10502", vendor: "OfficePro", amount: "$680", risk: "High" },
-  { id: "INV-10518", vendor: "Northwind Co.", amount: "$420", risk: "Low" },
-];
+import { getInvoiceReviews, InvoiceReview } from "../lib/invoices";
 
 export default function DashboardPage() {
   const router = useRouter();
   const [user, setUser] = useState<SessionUser | null>(null);
+  const [invoices, setInvoices] = useState<InvoiceReview[]>([]);
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
     getSession().then(setUser);
+    getInvoiceReviews()
+      .then(({ invoices: userInvoices }) => setInvoices(userInvoices))
+      .catch((error: unknown) => setLoadError(error instanceof Error ? error.message : "Could not load reviews."));
   }, []);
 
   const handleLogout = async () => {
     await clearSession();
     router.replace("/login");
   };
+
+  const stats = [
+    { label: "Total invoices", value: String(invoices.length), tone: "bg-indigo-50 text-indigo-700" },
+    { label: "Needs review", value: String(invoices.filter((invoice) => invoice.status === "needs_review").length), tone: "bg-amber-50 text-amber-700" },
+    { label: "High risk", value: String(invoices.filter((invoice) => invoice.riskLevel === "high").length), tone: "bg-rose-50 text-rose-700" },
+    { label: "Ready for review", value: String(invoices.filter((invoice) => invoice.status === "ready_for_review").length), tone: "bg-emerald-50 text-emerald-700" },
+  ];
 
   return (
     <ProtectedRoute>
@@ -85,22 +84,22 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentInvoices.map((invoice) => (
+                  {invoices.map((invoice) => (
                     <tr key={invoice.id} className="border-t border-slate-200">
-                      <td className="px-4 py-3 font-medium text-slate-800">{invoice.id}</td>
+                      <td className="px-4 py-3 font-medium text-slate-800">{invoice.invoiceNumber || `#${invoice.id}`}</td>
                       <td className="px-4 py-3 text-slate-600">{invoice.vendor}</td>
-                      <td className="px-4 py-3 text-slate-600">{invoice.amount}</td>
+                      <td className="px-4 py-3 text-slate-600">${Number(invoice.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
                       <td className="px-4 py-3">
                         <span
                           className={`rounded-full px-2 py-1 text-xs font-medium ${
-                            invoice.risk === "High"
+                            invoice.riskLevel === "high"
                               ? "bg-rose-100 text-rose-700"
-                              : invoice.risk === "Medium"
+                              : invoice.riskLevel === "medium"
                                 ? "bg-amber-100 text-amber-700"
                                 : "bg-emerald-100 text-emerald-700"
                           }`}
                         >
-                          {invoice.risk}
+                          {invoice.riskLevel}
                         </span>
                       </td>
                     </tr>
@@ -108,23 +107,20 @@ export default function DashboardPage() {
                 </tbody>
               </table>
             </div>
+            {loadError && <p role="alert" className="mt-3 text-sm text-rose-700">{loadError}</p>}
+            {!loadError && invoices.length === 0 && <p className="py-8 text-center text-sm text-slate-500">No invoice reviews yet.</p>}
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">Risk alerts</h2>
+            <h2 className="text-lg font-semibold text-slate-900">Priority reviews</h2>
             <div className="mt-4 space-y-3">
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-3">
-                <p className="text-sm font-medium text-amber-900">Price anomaly</p>
-                <p className="mt-1 text-sm text-amber-800">Keyboard from ABC Supplies is 85% above the vendor average.</p>
-              </div>
-              <div className="rounded-xl border border-rose-200 bg-rose-50 p-3">
-                <p className="text-sm font-medium text-rose-900">Duplicate invoice</p>
-                <p className="mt-1 text-sm text-rose-800">INV-10482 was submitted twice in the same week.</p>
-              </div>
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
-                <p className="text-sm font-medium text-emerald-900">Healthy</p>
-                <p className="mt-1 text-sm text-emerald-800">Northwind Co. is within policy tolerance.</p>
-              </div>
+              {invoices.filter((invoice) => invoice.status === "needs_review").slice(0, 5).map((invoice) => (
+                <div key={invoice.id} className="rounded-xl border border-amber-200 bg-amber-50 p-3">
+                  <p className="text-sm font-medium text-amber-900">{invoice.invoiceNumber || `Invoice #${invoice.id}`} · {invoice.vendor}</p>
+                  <p className="mt-1 text-sm text-amber-800">Risk score {invoice.riskScore}/100. {invoice.findings[0]?.message}</p>
+                </div>
+              ))}
+              {invoices.every((invoice) => invoice.status !== "needs_review") && <p className="text-sm text-slate-500">No invoices currently require manual review.</p>}
             </div>
           </div>
         </section>

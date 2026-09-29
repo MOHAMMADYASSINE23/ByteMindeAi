@@ -3,16 +3,29 @@
 import Link from "next/link";
 import { useState } from "react";
 import ProtectedRoute from "../../components/ProtectedRoute";
+import { createInvoiceReview, InvoiceReview } from "../../lib/invoices";
 
 export default function NewReviewPage() {
   const [fileName, setFileName] = useState("");
+  const [invoiceNumber, setInvoiceNumber] = useState("");
   const [vendor, setVendor] = useState("");
   const [amount, setAmount] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [review, setReview] = useState<InvoiceReview | null>(null);
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setSubmitted(true);
+    setError("");
+    setIsSubmitting(true);
+    try {
+      const result = await createInvoiceReview({ invoiceNumber, vendor, amount, documentName: fileName });
+      setReview(result.invoice);
+    } catch (requestError) {
+      setError(requestError instanceof Error ? requestError.message : "Could not run the invoice review.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -38,7 +51,7 @@ export default function NewReviewPage() {
                 </label>
                 <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center transition hover:border-indigo-400 hover:bg-indigo-50/40">
                   <span className="text-sm font-semibold text-slate-800">Choose PDF or image</span>
-                  <span className="mt-1 text-xs text-slate-500">Maximum 10 MB</span>
+                  <span className="mt-1 text-xs text-slate-500">File content is not uploaded yet</span>
                   <span className="mt-3 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-indigo-600 shadow-sm">
                     {fileName || "Browse files"}
                   </span>
@@ -50,6 +63,18 @@ export default function NewReviewPage() {
                     onChange={(event) => setFileName(event.target.files?.[0]?.name ?? "")}
                   />
                 </label>
+                <p className="mt-2 text-xs text-slate-500">Document storage is not connected yet; this records the selected filename only.</p>
+              </div>
+
+              <div>
+                <label htmlFor="invoiceNumber" className="mb-2 block text-sm font-medium text-slate-700">Invoice number <span className="font-normal text-slate-500">(optional)</span></label>
+                <input
+                  id="invoiceNumber"
+                  value={invoiceNumber}
+                  onChange={(event) => setInvoiceNumber(event.target.value)}
+                  placeholder="INV-2026-1042"
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 outline-none transition focus:border-indigo-400 focus:bg-white"
+                />
               </div>
 
               <div>
@@ -82,8 +107,10 @@ export default function NewReviewPage() {
                 </div>
               </div>
 
-              <button type="submit" className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-700">
-                Run audit
+              {error && <p role="alert" className="text-sm text-rose-700">{error}</p>}
+
+              <button type="submit" disabled={isSubmitting} className="w-full rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-700 disabled:cursor-wait disabled:opacity-60">
+                {isSubmitting ? "Running review..." : "Run audit"}
               </button>
             </form>
           </section>
@@ -109,43 +136,34 @@ export default function NewReviewPage() {
           </aside>
         </div>
 
-        {submitted && (
+        {review && (
           <div className="mt-6 rounded-2xl border border-amber-200 bg-white p-6 shadow-sm md:p-8">
             <div className="flex flex-col gap-5 md:flex-row md:items-start md:justify-between">
               <div>
                 <p className="text-sm font-medium uppercase tracking-[0.2em] text-amber-600">Audit result</p>
-                <h2 className="mt-2 text-2xl font-bold text-slate-900">Manual review recommended</h2>
+                <h2 className="mt-2 text-2xl font-bold text-slate-900">{review.status === "needs_review" ? "Manual review recommended" : "No configured checks were triggered"}</h2>
                 <p className="mt-2 text-sm text-slate-600">
-                  {vendor} needs a finance team member to review the findings before approval.
+                  {review.vendor} · Invoice {review.invoiceNumber || "number not provided"} · ${Number(review.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}
                 </p>
               </div>
               <div className="rounded-xl bg-amber-50 px-5 py-4 text-center">
                 <p className="text-xs font-semibold uppercase tracking-[0.15em] text-amber-700">Risk score</p>
-                <p className="mt-1 text-3xl font-bold text-amber-900">72/100</p>
+                <p className="mt-1 text-3xl font-bold text-amber-900">{review.riskScore}/100</p>
               </div>
             </div>
 
             <div className="mt-6 grid gap-3 md:grid-cols-3">
-              <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
-                <p className="text-sm font-semibold text-rose-900">Price anomaly</p>
-                <p className="mt-1 text-sm text-rose-800">Total is above the historical vendor range.</p>
-              </div>
-              <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                <p className="text-sm font-semibold text-amber-900">Duplicate check</p>
-                <p className="mt-1 text-sm text-amber-800">One similar invoice needs confirmation.</p>
-              </div>
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 p-4">
-                <p className="text-sm font-semibold text-emerald-900">Required fields</p>
-                <p className="mt-1 text-sm text-emerald-800">Vendor and total were captured successfully.</p>
-              </div>
+              {review.findings.map((finding) => (
+                <div key={finding.code} className={`rounded-xl border p-4 ${finding.severity === "high" ? "border-rose-200 bg-rose-50" : finding.severity === "medium" ? "border-amber-200 bg-amber-50" : "border-emerald-200 bg-emerald-50"}`}>
+                  <p className="text-sm font-semibold text-slate-900">{finding.code.replaceAll("_", " ")}</p>
+                  <p className="mt-1 text-sm text-slate-700">{finding.message}</p>
+                </div>
+              ))}
             </div>
 
             <div className="mt-6 flex flex-wrap gap-3">
-              <button className="rounded-xl bg-slate-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-slate-700">
-                Send for approval
-              </button>
               <Link href="/dashboard" className="rounded-xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
-                Back to dashboard
+                View saved reviews
               </Link>
             </div>
           </div>

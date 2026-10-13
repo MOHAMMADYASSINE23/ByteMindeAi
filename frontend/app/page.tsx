@@ -11,10 +11,10 @@ export default function Home() {
                 Invoice Auditor
               </span>
               <h1 className="mt-6 text-4xl font-bold tracking-tight text-slate-900 md:text-6xl">
-                Catch invoice risk before it becomes a cost.
+                Catch invoice risks before approval.
               </h1>
               <p className="mt-5 text-lg leading-8 text-slate-600">
-                Review expenses, validate totals, detect duplicates, and flag suspicious vendor pricing with a finance-first AI workflow.
+                Record invoice details, flag duplicate numbers and high-value totals, then track each review decision in one place.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-4">
@@ -22,7 +22,7 @@ export default function Home() {
                   href="/reviews/new"
                   className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-700"
                 >
-                  Upload invoice
+                  Review an invoice
                 </Link>
                 <Link
                   href="/dashboard"
@@ -33,27 +33,30 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="w-full max-w-xl rounded-2xl border border-slate-200 bg-slate-50 p-6">
-              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                <p className="text-xs font-semibold uppercase tracking-[0.2em] text-amber-700">Risk alert</p>
-                <p className="mt-2 text-2xl font-bold text-amber-900">85% above average</p>
-                <p className="mt-2 text-sm text-amber-800">
-                  Keyboard price jumped from $48 to $89 for ABC Supplies.
-                </p>
-              </div>
-
-              <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-xl border border-slate-200 bg-white p-3">
-                  <p className="text-xs text-slate-500">Invoices</p>
-                  <p className="mt-2 text-2xl font-bold">1,284</p>
+            <div className="w-full max-w-xl rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">Current audit rules</p>
+              <h2 className="mt-2 text-xl font-semibold text-slate-900">Three checks, clear reasons</h2>
+              <div className="mt-5 divide-y divide-slate-200">
+                <div className="flex items-start gap-4 py-4">
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-100 text-xs font-bold text-rose-700">1</span>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Repeated invoice number</p>
+                    <p className="mt-1 text-sm text-slate-600">Flags a number already submitted by your account.</p>
+                  </div>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-white p-3">
-                  <p className="text-xs text-slate-500">High risk</p>
-                  <p className="mt-2 text-2xl font-bold text-amber-600">7</p>
+                <div className="flex items-start gap-4 py-4">
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-amber-100 text-xs font-bold text-amber-700">2</span>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Totals from $5,000</p>
+                    <p className="mt-1 text-sm text-slate-600">Marks elevated-value invoices for policy review.</p>
+                  </div>
                 </div>
-                <div className="rounded-xl border border-slate-200 bg-white p-3">
-                  <p className="text-xs text-slate-500">Approved</p>
-                  <p className="mt-2 text-2xl font-bold text-emerald-600">94%</p>
+                <div className="flex items-start gap-4 py-4">
+                  <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-rose-100 text-xs font-bold text-rose-700">3</span>
+                  <div>
+                    <p className="text-sm font-semibold text-slate-900">Totals from $10,000</p>
+                    <p className="mt-1 text-sm text-slate-600">Recommends manual review for high-value invoices.</p>
+                  </div>
                 </div>
               </div>
             </div>

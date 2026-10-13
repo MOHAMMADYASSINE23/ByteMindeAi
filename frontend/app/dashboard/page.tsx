@@ -13,6 +13,7 @@ export default function DashboardPage() {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [invoices, setInvoices] = useState<InvoiceReview[]>([]);
   const [loadError, setLoadError] = useState("");
+  const [filter, setFilter] = useState<"all" | "needs_review" | "high_risk">("all");
 
   useEffect(() => {
     getSession().then(setUser);
@@ -26,12 +27,35 @@ export default function DashboardPage() {
     router.replace("/login");
   };
 
+  const priorityInvoices = invoices.filter((invoice) => invoice.status === "needs_review");
+  const highRiskCount = invoices.filter((invoice) => invoice.riskLevel === "high").length;
+
+  const visibleInvoices =
+    filter === "needs_review"
+      ? invoices.filter((invoice) => invoice.status === "needs_review")
+      : filter === "high_risk"
+        ? invoices.filter((invoice) => invoice.riskLevel === "high")
+        : invoices;
+
   const stats = [
     { label: "Total invoices", value: String(invoices.length), tone: "bg-indigo-50 text-indigo-700" },
-    { label: "Needs review", value: String(invoices.filter((invoice) => invoice.status === "needs_review").length), tone: "bg-amber-50 text-amber-700" },
-    { label: "High risk", value: String(invoices.filter((invoice) => invoice.riskLevel === "high").length), tone: "bg-rose-50 text-rose-700" },
+    { label: "Needs review", value: String(priorityInvoices.length), tone: "bg-amber-50 text-amber-700" },
+    { label: "High risk", value: String(highRiskCount), tone: "bg-rose-50 text-rose-700" },
     { label: "Ready for review", value: String(invoices.filter((invoice) => invoice.status === "ready_for_review").length), tone: "bg-emerald-50 text-emerald-700" },
   ];
+
+  const getRiskTone = (riskLevel: InvoiceReview["riskLevel"]) => {
+    if (riskLevel === "high") return "bg-rose-100 text-rose-700";
+    if (riskLevel === "medium") return "bg-amber-100 text-amber-700";
+    return "bg-emerald-100 text-emerald-700";
+  };
+
+  const getStatusText = (status: InvoiceReview["status"]) => {
+    if (status === "needs_review") return "Needs review";
+    if (status === "ready_for_review") return "Ready";
+    if (status === "approved") return "Approved";
+    return "Rejected";
+  };
 
   return (
     <ProtectedRoute>
@@ -68,9 +92,28 @@ export default function DashboardPage() {
 
         <section className="mt-8 grid gap-6 xl:grid-cols-[1.5fr_0.9fr]">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-            <div className="mb-4 flex items-center justify-between">
+            <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <h2 className="text-lg font-semibold text-slate-900">Recent invoice reviews</h2>
-              <button className="text-sm font-medium text-indigo-600">View all</button>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { key: "all", label: "All" },
+                  { key: "needs_review", label: "Needs review" },
+                  { key: "high_risk", label: "High risk" },
+                ].map((tab) => (
+                  <button
+                    key={tab.key}
+                    type="button"
+                    onClick={() => setFilter(tab.key as typeof filter)}
+                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+                      filter === tab.key
+                        ? "bg-slate-900 text-white"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    {tab.label}
+                  </button>
+                ))}
+              </div>
             </div>
 
             <div className="overflow-hidden rounded-xl border border-slate-200">
@@ -80,25 +123,27 @@ export default function DashboardPage() {
                     <th className="px-4 py-3 font-medium">Invoice</th>
                     <th className="px-4 py-3 font-medium">Vendor</th>
                     <th className="px-4 py-3 font-medium">Amount</th>
+                    <th className="px-4 py-3 font-medium">Status</th>
                     <th className="px-4 py-3 font-medium">Risk</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {invoices.map((invoice) => (
+                  {visibleInvoices.map((invoice) => (
                     <tr key={invoice.id} className="border-t border-slate-200">
-                      <td className="px-4 py-3 font-medium text-slate-800">{invoice.invoiceNumber || `#${invoice.id}`}</td>
+                      <td className="px-4 py-3 font-medium text-slate-800">
+                        <Link href={`/dashboard/invoices/${invoice.id}`} className="text-indigo-600 hover:text-indigo-500">
+                          {invoice.invoiceNumber || `#${invoice.id}`}
+                        </Link>
+                      </td>
                       <td className="px-4 py-3 text-slate-600">{invoice.vendor}</td>
                       <td className="px-4 py-3 text-slate-600">${Number(invoice.amount).toLocaleString("en-US", { minimumFractionDigits: 2 })}</td>
                       <td className="px-4 py-3">
-                        <span
-                          className={`rounded-full px-2 py-1 text-xs font-medium ${
-                            invoice.riskLevel === "high"
-                              ? "bg-rose-100 text-rose-700"
-                              : invoice.riskLevel === "medium"
-                                ? "bg-amber-100 text-amber-700"
-                                : "bg-emerald-100 text-emerald-700"
-                          }`}
-                        >
+                        <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-medium text-slate-700">
+                          {getStatusText(invoice.status)}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`rounded-full px-2 py-1 text-xs font-medium ${getRiskTone(invoice.riskLevel)}`}>
                           {invoice.riskLevel}
                         </span>
                       </td>
@@ -108,19 +153,24 @@ export default function DashboardPage() {
               </table>
             </div>
             {loadError && <p role="alert" className="mt-3 text-sm text-rose-700">{loadError}</p>}
-            {!loadError && invoices.length === 0 && <p className="py-8 text-center text-sm text-slate-500">No invoice reviews yet.</p>}
+            {!loadError && visibleInvoices.length === 0 && <p className="py-8 text-center text-sm text-slate-500">No matching invoices in this view.</p>}
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">Priority reviews</h2>
             <div className="mt-4 space-y-3">
-              {invoices.filter((invoice) => invoice.status === "needs_review").slice(0, 5).map((invoice) => (
+              {priorityInvoices.slice(0, 5).map((invoice) => (
                 <div key={invoice.id} className="rounded-xl border border-amber-200 bg-amber-50 p-3">
-                  <p className="text-sm font-medium text-amber-900">{invoice.invoiceNumber || `Invoice #${invoice.id}`} · {invoice.vendor}</p>
-                  <p className="mt-1 text-sm text-amber-800">Risk score {invoice.riskScore}/100. {invoice.findings[0]?.message}</p>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-sm font-medium text-amber-900">{invoice.invoiceNumber || `Invoice #${invoice.id}`} · {invoice.vendor}</p>
+                    <span className={`rounded-full px-2 py-1 text-[10px] font-semibold uppercase tracking-wide ${getRiskTone(invoice.riskLevel)}`}>
+                      {invoice.riskLevel}
+                    </span>
+                  </div>
+                  <p className="mt-2 text-sm text-amber-800">Risk score {invoice.riskScore}/100. {invoice.findings[0]?.message}</p>
                 </div>
               ))}
-              {invoices.every((invoice) => invoice.status !== "needs_review") && <p className="text-sm text-slate-500">No invoices currently require manual review.</p>}
+              {priorityInvoices.length === 0 && <p className="text-sm text-slate-500">No invoices currently require manual review.</p>}
             </div>
           </div>
         </section>

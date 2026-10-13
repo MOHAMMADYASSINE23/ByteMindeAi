@@ -79,4 +79,59 @@ router.get("/", async (req, res) => {
   }
 });
 
+router.get("/:id", async (req, res) => {
+  const invoiceId = Number(req.params.id);
+
+  if (!Number.isInteger(invoiceId) || invoiceId <= 0) {
+    return res.status(400).json({ message: "Invoice id is invalid." });
+  }
+
+  try {
+    const [invoice] = await sql`SELECT id, invoice_number AS "invoiceNumber", vendor,
+        amount::text AS amount, document_name AS "documentName", risk_score AS "riskScore",
+        risk_level AS "riskLevel", status, findings, created_at AS "createdAt"
+      FROM invoices WHERE id = ${invoiceId} AND user_id = ${req.user.id}`;
+
+    if (!invoice) {
+      return res.status(404).json({ message: "Invoice not found." });
+    }
+
+    return res.json({ invoice });
+  } catch (error) {
+    console.error("Invoice detail failed:", error.message);
+    return res.status(500).json({ message: "Could not load the invoice." });
+  }
+});
+
+router.patch("/:id/status", async (req, res) => {
+  const invoiceId = Number(req.params.id);
+  const allowedStatuses = ["ready_for_review", "needs_review", "approved", "rejected"];
+  const nextStatus = typeof req.body.status === "string" ? req.body.status.trim() : "";
+
+  if (!Number.isInteger(invoiceId) || invoiceId <= 0) {
+    return res.status(400).json({ message: "Invoice id is invalid." });
+  }
+  if (!allowedStatuses.includes(nextStatus)) {
+    return res.status(400).json({ message: "Status is not valid." });
+  }
+
+  try {
+    const [invoice] = await sql`UPDATE invoices
+      SET status = ${nextStatus}
+      WHERE id = ${invoiceId} AND user_id = ${req.user.id}
+      RETURNING id, invoice_number AS "invoiceNumber", vendor,
+        amount::text AS amount, document_name AS "documentName", risk_score AS "riskScore",
+        risk_level AS "riskLevel", status, findings, created_at AS "createdAt"`;
+
+    if (!invoice) {
+      return res.status(404).json({ message: "Invoice not found." });
+    }
+
+    return res.json({ invoice });
+  } catch (error) {
+    console.error("Invoice status update failed:", error.message);
+    return res.status(500).json({ message: "Could not update the invoice status." });
+  }
+});
+
 export default router;

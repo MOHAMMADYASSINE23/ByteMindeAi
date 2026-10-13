@@ -41,7 +41,7 @@ export default function NewReviewPage() {
             <p className="text-sm font-medium uppercase tracking-[0.2em] text-slate-500">New review</p>
             <h1 className="mt-2 text-3xl font-bold text-slate-900">Audit an invoice</h1>
             <p className="mt-3 text-sm leading-6 text-slate-600">
-              Upload an invoice and add the basic details your finance team needs for a first risk check.
+              Enter the invoice details to run duplicate-number and high-value checks.
             </p>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-5">
@@ -116,13 +116,13 @@ export default function NewReviewPage() {
           </section>
 
           <aside className="h-fit rounded-2xl border border-slate-200 bg-slate-900 p-6 text-white shadow-sm md:p-8">
-            <p className="text-sm font-medium uppercase tracking-[0.2em] text-indigo-300">Audit checks</p>
-            <h2 className="mt-3 text-xl font-semibold">What happens next?</h2>
+            <p className="text-sm font-medium uppercase tracking-[0.2em] text-indigo-300">Current checks</p>
+            <h2 className="mt-3 text-xl font-semibold">How this review works</h2>
             <div className="mt-6 space-y-5">
               {[
-                ["01", "Extract fields", "Read vendor, totals, dates, and line items from the document."],
-                ["02", "Check for risk", "Compare pricing, duplicates, and policy thresholds."],
-                ["03", "Send for review", "Give your team a clear explanation and approval decision."],
+                ["01", "Enter invoice details", "Provide the vendor, invoice number, and total manually."],
+                ["02", "Check configured rules", "Flag duplicate invoice numbers and high-value totals."],
+                ["03", "Record a decision", "Approve, reject, or escalate from the invoice detail page."],
               ].map(([number, title, description]) => (
                 <div key={number} className="flex gap-3">
                   <span className="text-sm font-bold text-indigo-300">{number}</span>

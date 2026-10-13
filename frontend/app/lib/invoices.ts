@@ -34,3 +34,13 @@ export async function createInvoiceReview(input: {
 export async function getInvoiceReviews() {
   return apiRequest<{ invoices: InvoiceReview[] }>("/api/invoices");
 }
+export async function getInvoiceReview(id: string) {
+  return apiRequest<{ invoice: InvoiceReview }>(`/api/invoices/${id}`);
+}
+
+export async function updateInvoiceStatus(id: string, status: InvoiceReview["status"]) {
+  return apiRequest<{ invoice: InvoiceReview }>(`/api/invoices/${id}/status`, {
+    method: "PATCH",
+    body: JSON.stringify({ status }),
+  });
+}

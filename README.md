@@ -1,47 +1,75 @@
-# ByteMindeAi
+# ByteMindAI Invoice Auditor
 
-Invoice Auditor is a finance workflow prototype for reviewing invoices and identifying potential risk before approval.
+Invoice Auditor is a finance workflow MVP for recording invoice metadata, flagging basic risk signals, and tracking review decisions.
 
 ## Project structure
 
-- `frontend/` — Next.js App Router interface
-- `server/` — Express API for custom authentication and PostgreSQL sessions
+- `frontend/` — Next.js App Router application
+- `server/` — Express API, custom session authentication, and PostgreSQL persistence
 
-The previous Vite AI-tools client and its unrelated generation APIs have been removed.
+The old Vite AI-tools client is not part of the active application.
 
 ## Run locally
 
-Install dependencies once:
+Install dependencies:
 
 ```bash
-cd server && npm install
-cd ../frontend && npm install
+cd server
+npm install
+cd ../frontend
+npm install
 ```
 
-Set `server/.env` with `DATABASE_URL` for a Neon/PostgreSQL database. Optional values are `PORT` (defaults to `5000`) and `FRONTEND_URL` (defaults to `http://localhost:3000,http://localhost:5173`). The server creates the `users` and `user_sessions` tables on startup.
+Configure `server/.env` with `DATABASE_URL` for PostgreSQL/Neon. Use `server/.env.example` as the template. Optional settings are `PORT` (default `5000`) and `FRONTEND_URL` (default `http://localhost:3000,http://localhost:5173`). The API initializes the user, session, and invoice tables at startup.
 
-Start the API in one terminal:
+Run the API in one terminal:
 
 ```bash
 cd server
 npm run server
 ```
 
-Start the web app in another terminal:
+Run the web app in another terminal:
 
 ```bash
 cd frontend
 npm run dev
 ```
 
-Open `http://localhost:3000`. Signup and login use bcrypt password hashes and an HTTP-only session cookie. Set `NEXT_PUBLIC_API_URL` in the frontend deployment to the deployed API origin when not using localhost.
+Open `http://localhost:3000`, create an account, submit an invoice, then open it from the dashboard to inspect findings and try approve, reject, or escalate. Authentication uses bcrypt password hashes and an HTTP-only session cookie. Set `NEXT_PUBLIC_API_URL` to the API origin when deploying the frontend separately.
 
 ## Current scope
 
-Authentication and protected frontend routes use the API. Invoice metadata and audit findings are persisted per user. The current deterministic checks flag repeated invoice numbers and totals at or above $5,000/$10,000; these are starter rules, not historical price analysis or document extraction. File bytes are not uploaded or stored yet, and approval/rejection actions are not implemented.
+Invoice metadata and risk findings are persisted per user. Starter rules flag repeated invoice numbers and invoice totals at or above `$5,000` and `$10,000`. The dashboard filters reviews by risk/status, and each invoice has a detail page with a persisted decision status.
 
-Run backend unit tests with `cd server && npm test`. With the API and database running, run `cd server && npm run smoke:api` for a temporary end-to-end signup, invoice, duplicate-check, and logout test; it deletes its temporary account afterward.
+This MVP does not upload or store document bytes, extract fields with OCR, compare historical vendor prices, or record a reviewer audit trail. The selected filename alone is stored. Risk checks are deterministic starter rules, not AI advice or an accounting decision.
+
+## Tests
+
+Run backend unit tests without a running API:
+
+```bash
+cd server
+npm test
+```
+
+For live integration checks, keep the API and database running in one terminal and run these from another:
+
+```bash
+cd server
+npm run smoke:api
+npm run smoke:detail
+```
+
+Each smoke test creates a temporary user and removes it afterward.
+
+Build the frontend:
+
+```bash
+cd frontend
+npm run build
+```
 
 ## Credential safety
 
-Keep real credentials in ignored local env files and use `server/.env.example` as the template. Credentials previously committed or shared must be revoked and rotated in their provider dashboards; deleting a key from the current file does not remove it from Git history.
+Keep credentials in ignored local environment files and never commit them. Revoke and rotate any real credentials that were previously committed or shared; removing a key from the current checkout does not remove it from Git history.

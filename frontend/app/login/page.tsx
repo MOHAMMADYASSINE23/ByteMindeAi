@@ -23,7 +23,6 @@ export default function LoginPage() {
         </div>
 
         <AuthForm
-          title="Welcome back"
           fields={[
             { name: "email", label: "Email", type: "email", placeholder: "finance@company.com" },
             { name: "password", label: "Password", type: "password", placeholder: "••••••••" },

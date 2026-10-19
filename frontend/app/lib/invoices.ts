@@ -16,6 +16,9 @@ export interface InvoiceReview {
   riskLevel: "low" | "medium" | "high";
   status: "ready_for_review" | "needs_review" | "approved" | "rejected";
   findings: InvoiceFinding[];
+  statusHistory?: Array<{ status: string; changedAt: string }>;
+  vendorHistory?: Array<{ count: number; averageAmount: number; maxAmount: number; checkedAt?: string }> | null;
+  reviewNotes?: Array<{ note: string; author: string; email: string; createdAt: string }>;
   createdAt: string;
 }
 
@@ -24,7 +27,22 @@ export async function createInvoiceReview(input: {
   vendor: string;
   amount: string;
   documentName: string;
+  file?: File | null;
 }) {
+  if (input.file) {
+    const formData = new FormData();
+    formData.append('invoiceNumber', input.invoiceNumber);
+    formData.append('vendor', input.vendor);
+    formData.append('amount', input.amount);
+    formData.append('documentName', input.documentName);
+    formData.append('invoiceFile', input.file);
+
+    return apiRequest<{ invoice: InvoiceReview }>('/api/invoices', {
+      method: 'POST',
+      body: formData,
+    });
+  }
+
   return apiRequest<{ invoice: InvoiceReview }>("/api/invoices", {
     method: "POST",
     body: JSON.stringify(input),
@@ -42,5 +60,12 @@ export async function updateInvoiceStatus(id: string, status: InvoiceReview["sta
   return apiRequest<{ invoice: InvoiceReview }>(`/api/invoices/${id}/status`, {
     method: "PATCH",
     body: JSON.stringify({ status }),
+  });
+}
+
+export async function addInvoiceNote(id: string, note: string) {
+  return apiRequest<{ invoice: InvoiceReview }>(`/api/invoices/${id}/notes`, {
+    method: "POST",
+    body: JSON.stringify({ note }),
   });
 }

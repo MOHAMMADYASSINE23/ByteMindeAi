@@ -45,6 +45,30 @@ try {
   const foreignDetailResponse = await fetch(detailUrl, { headers: { cookie: otherCookie } });
   assert.equal(foreignDetailResponse.status, 404, "users must not access another user's invoice");
 
+  const invalidNoteResponse = await fetch(`${detailUrl}/notes`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ note: "   " }),
+  });
+  assert.equal(invalidNoteResponse.status, 400, "empty reviewer notes should be rejected");
+
+  const noteResponse = await fetch(`${detailUrl}/notes`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify({ note: "Checked the purchase order with the department lead." }),
+  });
+  const noteResult = await noteResponse.json();
+  assert.equal(noteResponse.status, 201, "valid reviewer note should be saved");
+  assert.equal(noteResult.invoice.reviewNotes.at(-1).note, "Checked the purchase order with the department lead.");
+  assert.equal(noteResult.invoice.reviewNotes.at(-1).email, email);
+
+  const foreignNoteResponse = await fetch(`${detailUrl}/notes`, {
+    method: "POST",
+    headers: { ...headers, cookie: otherCookie },
+    body: JSON.stringify({ note: "Should not be allowed." }),
+  });
+  assert.equal(foreignNoteResponse.status, 404, "users must not add notes to another user's invoice");
+
   const invalidStatusResponse = await fetch(`${detailUrl}/status`, {
     method: "PATCH",
     headers,
@@ -61,7 +85,7 @@ try {
   assert.equal(updateResponse.status, 200, "status update should succeed");
   assert.equal(updated.invoice.status, "approved");
 
-  console.log("Invoice detail smoke test passed: ownership, detail, validation, and status update.");
+  console.log("Invoice detail smoke test passed: ownership, detail, note persistence, validation, and status update.");
 } finally {
   await sql`DELETE FROM users WHERE email IN (${email}, ${otherEmail})`;
 }

@@ -7,6 +7,7 @@ import { createInvoiceReview, InvoiceReview } from "../../lib/invoices";
 
 export default function NewReviewPage() {
   const [fileName, setFileName] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [invoiceNumber, setInvoiceNumber] = useState("");
   const [vendor, setVendor] = useState("");
   const [amount, setAmount] = useState("");
@@ -19,13 +20,25 @@ export default function NewReviewPage() {
     setError("");
     setIsSubmitting(true);
     try {
-      const result = await createInvoiceReview({ invoiceNumber, vendor, amount, documentName: fileName });
+      const result = await createInvoiceReview({
+        invoiceNumber,
+        vendor,
+        amount,
+        documentName: fileName,
+        file: selectedFile,
+      });
       setReview(result.invoice);
     } catch (requestError) {
       setError(requestError instanceof Error ? requestError.message : "Could not run the invoice review.");
     } finally {
       setIsSubmitting(false);
     }
+  };
+
+  const handleFileSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const nextFile = event.target.files?.[0] ?? null;
+    setSelectedFile(nextFile);
+    setFileName(nextFile?.name ?? "");
   };
 
   return (
@@ -51,7 +64,7 @@ export default function NewReviewPage() {
                 </label>
                 <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center transition hover:border-indigo-400 hover:bg-indigo-50/40">
                   <span className="text-sm font-semibold text-slate-800">Choose PDF or image</span>
-                  <span className="mt-1 text-xs text-slate-500">File content is not uploaded yet</span>
+                  <span className="mt-1 text-xs text-slate-500">Upload a file to extract vendor, number, and total details</span>
                   <span className="mt-3 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-indigo-600 shadow-sm">
                     {fileName || "Browse files"}
                   </span>
@@ -60,10 +73,10 @@ export default function NewReviewPage() {
                     type="file"
                     accept="application/pdf,image/*"
                     className="sr-only"
-                    onChange={(event) => setFileName(event.target.files?.[0]?.name ?? "")}
+                    onChange={handleFileSelection}
                   />
                 </label>
-                <p className="mt-2 text-xs text-slate-500">Document storage is not connected yet; this records the selected filename only.</p>
+                <p className="mt-2 text-xs text-slate-500">The server reads the uploaded document and extracts invoice metadata before saving the review.</p>
               </div>
 
               <div>
@@ -73,7 +86,7 @@ export default function NewReviewPage() {
                   value={invoiceNumber}
                   onChange={(event) => setInvoiceNumber(event.target.value)}
                   placeholder="INV-2026-1042"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 outline-none transition focus:border-indigo-400 focus:bg-white"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-base text-slate-900 caret-indigo-700 placeholder:text-slate-400 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
                 />
               </div>
 
@@ -84,14 +97,14 @@ export default function NewReviewPage() {
                   value={vendor}
                   onChange={(event) => setVendor(event.target.value)}
                   placeholder="ABC Supplies"
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-3 outline-none transition focus:border-indigo-400 focus:bg-white"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-3 py-3 text-base text-slate-900 caret-indigo-700 placeholder:text-slate-400 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
                   required
                 />
               </div>
 
               <div>
                 <label htmlFor="amount" className="mb-2 block text-sm font-medium text-slate-700">Invoice total</label>
-                <div className="flex rounded-xl border border-slate-200 bg-slate-50 focus-within:border-indigo-400 focus-within:bg-white">
+                <div className="flex rounded-xl border border-slate-300 bg-white shadow-sm transition focus-within:border-indigo-500 focus-within:ring-4 focus-within:ring-indigo-100">
                   <span className="flex items-center border-r border-slate-200 px-3 text-sm text-slate-500">USD</span>
                   <input
                     id="amount"
@@ -101,7 +114,7 @@ export default function NewReviewPage() {
                     value={amount}
                     onChange={(event) => setAmount(event.target.value)}
                     placeholder="935.00"
-                    className="min-w-0 flex-1 bg-transparent px-3 py-3 outline-none"
+                    className="min-w-0 flex-1 bg-transparent px-3 py-3 text-base text-slate-900 caret-indigo-700 placeholder:text-slate-400 outline-none"
                     required
                   />
                 </div>

@@ -14,6 +14,8 @@ export default function DashboardPage() {
   const [invoices, setInvoices] = useState<InvoiceReview[]>([]);
   const [loadError, setLoadError] = useState("");
   const [filter, setFilter] = useState<"all" | "needs_review" | "high_risk">("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [sortBy, setSortBy] = useState<"newest" | "highest_risk" | "highest_amount">("newest");
 
   useEffect(() => {
     getSession().then(setUser);
@@ -27,21 +29,48 @@ export default function DashboardPage() {
     router.replace("/login");
   };
 
-  const priorityInvoices = invoices.filter((invoice) => invoice.status === "needs_review");
-  const highRiskCount = invoices.filter((invoice) => invoice.riskLevel === "high").length;
+  const priorityInvoices = [...invoices]
+    .filter((invoice) => invoice.status === "needs_review")
+    .sort((a, b) => b.riskScore - a.riskScore)
+    .slice(0, 5);
 
-  const visibleInvoices =
-    filter === "needs_review"
-      ? invoices.filter((invoice) => invoice.status === "needs_review")
-      : filter === "high_risk"
-        ? invoices.filter((invoice) => invoice.riskLevel === "high")
-        : invoices;
+  const highRiskCount = invoices.filter((invoice) => invoice.riskLevel === "high").length;
+  const approvedCount = invoices.filter((invoice) => invoice.status === "approved").length;
+  const rejectedCount = invoices.filter((invoice) => invoice.status === "rejected").length;
+  const averageRisk = invoices.length
+    ? Math.round(invoices.reduce((sum, invoice) => sum + invoice.riskScore, 0) / invoices.length)
+    : 0;
+  const outlierCount = invoices.filter((invoice) => invoice.findings.some((finding) => finding.code === "VENDOR_HISTORY_OUTLIER")).length;
+
+  const filteredInvoices = [...invoices]
+    .filter((invoice) => {
+      const matchesFilter =
+        filter === "needs_review"
+          ? invoice.status === "needs_review"
+          : filter === "high_risk"
+            ? invoice.riskLevel === "high"
+            : true;
+
+      const query = searchTerm.trim().toLowerCase();
+      const matchesSearch =
+        query.length === 0 ||
+        [invoice.invoiceNumber, invoice.vendor, invoice.documentName]
+          .filter(Boolean)
+          .some((value) => String(value).toLowerCase().includes(query));
+
+      return matchesFilter && matchesSearch;
+    })
+    .sort((a, b) => {
+      if (sortBy === "highest_risk") return b.riskScore - a.riskScore;
+      if (sortBy === "highest_amount") return Number(b.amount) - Number(a.amount);
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
 
   const stats = [
     { label: "Total invoices", value: String(invoices.length), tone: "bg-indigo-50 text-indigo-700" },
     { label: "Needs review", value: String(priorityInvoices.length), tone: "bg-amber-50 text-amber-700" },
-    { label: "High risk", value: String(highRiskCount), tone: "bg-rose-50 text-rose-700" },
-    { label: "Ready for review", value: String(invoices.filter((invoice) => invoice.status === "ready_for_review").length), tone: "bg-emerald-50 text-emerald-700" },
+    { label: "Approved", value: String(approvedCount), tone: "bg-emerald-50 text-emerald-700" },
+    { label: "Avg risk", value: `${averageRisk}%`, tone: "bg-rose-50 text-rose-700" },
   ];
 
   const getRiskTone = (riskLevel: InvoiceReview["riskLevel"]) => {
@@ -116,6 +145,50 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div className="w-full md:max-w-sm">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
+                  Search
+                </label>
+                <input
+                  value={searchTerm}
+                  onChange={(event) => setSearchTerm(event.target.value)}
+                  placeholder="Vendor, invoice, file..."
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-indigo-400 focus:bg-white"
+                />
+              </div>
+
+              <div className="w-full md:max-w-[220px]">
+                <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.15em] text-slate-500">
+                  Sort by
+                </label>
+                <select
+                  value={sortBy}
+                  onChange={(event) => setSortBy(event.target.value as typeof sortBy)}
+                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-sm text-slate-700 outline-none transition focus:border-indigo-400 focus:bg-white"
+                >
+                  <option value="newest">Newest</option>
+                  <option value="highest_risk">Highest risk</option>
+                  <option value="highest_amount">Largest amount</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="mb-4 grid gap-3 sm:grid-cols-3">
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">High risk</p>
+                <p className="mt-2 text-2xl font-bold text-slate-900">{highRiskCount}</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Rejected</p>
+                <p className="mt-2 text-2xl font-bold text-slate-900">{rejectedCount}</p>
+              </div>
+              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                <p className="text-[10px] font-semibold uppercase tracking-[0.15em] text-slate-500">Outliers</p>
+                <p className="mt-2 text-2xl font-bold text-slate-900">{outlierCount}</p>
+              </div>
+            </div>
+
             <div className="overflow-hidden rounded-xl border border-slate-200">
               <table className="min-w-full text-left text-sm">
                 <thead className="bg-slate-50 text-slate-600">
@@ -128,7 +201,7 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {visibleInvoices.map((invoice) => (
+                  {filteredInvoices.map((invoice) => (
                     <tr key={invoice.id} className="border-t border-slate-200">
                       <td className="px-4 py-3 font-medium text-slate-800">
                         <Link href={`/dashboard/invoices/${invoice.id}`} className="text-indigo-600 hover:text-indigo-500">
@@ -153,13 +226,13 @@ export default function DashboardPage() {
               </table>
             </div>
             {loadError && <p role="alert" className="mt-3 text-sm text-rose-700">{loadError}</p>}
-            {!loadError && visibleInvoices.length === 0 && <p className="py-8 text-center text-sm text-slate-500">No matching invoices in this view.</p>}
+            {!loadError && filteredInvoices.length === 0 && <p className="py-8 text-center text-sm text-slate-500">No matching invoices in this view.</p>}
           </div>
 
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
             <h2 className="text-lg font-semibold text-slate-900">Priority reviews</h2>
             <div className="mt-4 space-y-3">
-              {priorityInvoices.slice(0, 5).map((invoice) => (
+              {priorityInvoices.map((invoice) => (
                 <div key={invoice.id} className="rounded-xl border border-amber-200 bg-amber-50 p-3">
                   <div className="flex items-center justify-between gap-3">
                     <p className="text-sm font-medium text-amber-900">{invoice.invoiceNumber || `Invoice #${invoice.id}`} · {invoice.vendor}</p>
@@ -167,7 +240,8 @@ export default function DashboardPage() {
                       {invoice.riskLevel}
                     </span>
                   </div>
-                  <p className="mt-2 text-sm text-amber-800">Risk score {invoice.riskScore}/100. {invoice.findings[0]?.message}</p>
+                  <p className="mt-2 text-sm text-amber-800">Risk score {invoice.riskScore}/100.</p>
+                  <p className="mt-1 text-xs text-amber-700">{invoice.findings[0]?.message || "Standard policy review."}</p>
                 </div>
               ))}
               {priorityInvoices.length === 0 && <p className="text-sm text-slate-500">No invoices currently require manual review.</p>}

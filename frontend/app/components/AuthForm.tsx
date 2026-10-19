@@ -7,7 +7,6 @@ interface AuthFormData {
 }
 
 interface AuthFormProps {
-  title: string;
   onSubmit: (data: AuthFormData) => void;
   isLoading?: boolean;
   error?: string;
@@ -21,7 +20,6 @@ interface AuthFormProps {
 }
 
 export default function AuthForm({
-  title,
   onSubmit,
   isLoading = false,
   error,
@@ -62,15 +60,11 @@ export default function AuthForm({
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6" noValidate>
-      <div>
-        <h1 className="text-2xl font-bold">{title}</h1>
-      </div>
-
       {fields.map((field) => (
         <div key={field.name} className="space-y-2">
           <label
             htmlFor={field.name}
-            className="text-sm font-medium"
+            className="block text-sm font-medium text-slate-700"
           >
             {field.label}
           </label>
@@ -85,7 +79,10 @@ export default function AuthForm({
             onChange={(event) =>
               handleChange(field.name, event.target.value)
             }
-            className="w-full rounded-md border px-4 py-2 outline-none focus:ring-2"
+            autoComplete={field.type === "password"
+              ? field.name === "confirmPassword" ? "new-password" : "current-password"
+              : field.type === "email" ? "email" : field.name === "name" ? "name" : "off"}
+            className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-slate-900 caret-indigo-700 placeholder:text-slate-400 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-4 focus:ring-indigo-100"
           />
         </div>
            ))}
@@ -99,7 +96,7 @@ export default function AuthForm({
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full rounded-md px-4 py-2 font-medium disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-xl bg-slate-900 px-4 py-3 font-semibold text-white transition hover:bg-slate-700 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isLoading ? "Loading..." : submitButtonText}
       </button>

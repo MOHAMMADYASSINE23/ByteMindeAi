@@ -23,7 +23,6 @@ export default function SignupPage() {
         </div>
 
         <AuthForm
-          title="Create account"
           fields={[
             { name: "name", label: "Full name", type: "text", placeholder: "Jane Smith" },
             { name: "email", label: "Email", type: "email", placeholder: "finance@company.com" },

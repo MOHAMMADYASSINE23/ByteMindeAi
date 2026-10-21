@@ -10,11 +10,15 @@ export default function ProtectedRoute({ children }: { children: React.ReactNode
 
   useEffect(() => {
     let active = true;
-    getSession().then((session) => {
-      if (!active) return;
-      if (!session) router.replace("/login");
-      else setUser(session);
-    });
+    getSession()
+      .then((session) => {
+        if (!active) return;
+        if (!session) router.replace("/login");
+        else setUser(session);
+      })
+      .catch(() => {
+        if (active) router.replace("/login");
+      });
 
     return () => { active = false; };
   }, [router]);

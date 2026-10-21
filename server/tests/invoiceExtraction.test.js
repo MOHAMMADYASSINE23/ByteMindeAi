@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { extractInvoiceMetadata } from '../lib/invoiceExtraction.js';
+import { extractInvoiceMetadata, formatPdfTextItems } from '../lib/invoiceExtraction.js';
 
 test('extracts vendor, invoice number, and amount from invoice text', () => {
   const text = `Northwind Supply Co
@@ -77,4 +77,22 @@ test('supports currency-only fallback when no total label is present', () => {
   const result = extractInvoiceMetadata('ACME INDUSTRIES\nInvoice # ACME-2048\nEUR 850,00');
 
   assert.equal(result.amount, 850);
+});
+
+
+test('keeps PDF text items on separate lines based on their vertical positions', () => {
+  const text = formatPdfTextItems([
+    { str: 'Northwind', transform: [1, 0, 0, 1, 40, 700] },
+    { str: 'Supply Co', transform: [1, 0, 0, 1, 110, 700] },
+    { str: 'Invoice #', transform: [1, 0, 0, 1, 40, 675] },
+    { str: 'INV-2048', transform: [1, 0, 0, 1, 100, 675] },
+    { str: 'Grand Total: $990.00', transform: [1, 0, 0, 1, 40, 640] },
+  ]);
+
+  assert.equal(text, 'Northwind Supply Co\\nInvoice # INV-2048\\nGrand Total: $990.00');
+
+  const result = extractInvoiceMetadata(text);
+  assert.equal(result.vendor, 'Northwind Supply Co');
+  assert.equal(result.invoiceNumber, 'INV-2048');
+  assert.equal(result.amount, 990);
 });

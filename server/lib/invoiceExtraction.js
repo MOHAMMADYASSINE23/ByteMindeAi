@@ -125,21 +125,36 @@ function extractInvoiceNumber(text) {
 }
 
 function extractInvoiceAmount(text) {
-  const patterns = [
-    /(?:total|amount(?:\s+due)?|grand\s+total|balance(?:\s+due)?|due\s+today)\s*[:$]*\s*\$?\s*([0-9][0-9,]*(?:\.\d{2})?)/gi,
-    /\$\s*([0-9][0-9,]*(?:\.\d{2})?)/g,
+  // Prefer labels that usually identify the final payable amount.
+  // Match each label in priority order so an earlier subtotal cannot win.
+  const amountPattern = /\$?\s*([0-9][0-9,]*(?:\.\d{1,2})?)/;
+  const labels = [
+    /\bgrand\s+total\b\s*[:=\-]?\s*\$?\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i,
+    /\binvoice\s+total\b\s*[:=\-]?\s*\$?\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i,
+    /\btotal\s+due\b\s*[:=\-]?\s*\$?\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i,
+    /\bamount\s+due\b\s*[:=\-]?\s*\$?\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i,
+    /\bbalance\s+due\b\s*[:=\-]?\s*\$?\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i,
+    /\btotal\b\s*[:=\-]?\s*\$?\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i,
+    /\bamount\b\s*[:=\-]?\s*\$?\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i,
   ];
 
-  for (const pattern of patterns) {
+  for (const pattern of labels) {
     const match = text.match(pattern);
-    if (match && match[0]) {
-      const raw = match[0].replace(/[^\d.]/g, '');
-      const numeric = Number(raw);
+    if (match?.[1]) {
+      const numeric = Number(match[1].replace(/,/g, ''));
       if (Number.isFinite(numeric)) {
         return numeric;
       }
     }
   }
 
-  return null;
+  // Fallback for documents that only show currency amounts without a clear label.
+  const currencyMatch = text.match(/\$\s*([0-9][0-9,]*(?:\.\d{1,2})?)/);
+  if (currencyMatch?.[1]) {
+    const numeric = Number(currencyMatch[1].replace(/,/g, ''));
+    return Number.isFinite(numeric) ? numeric : null;
+  }
+
+  // Keep the amount regex defined above documented for future format extensions.
+  return amountPattern.test(text) ? null : null;
 }

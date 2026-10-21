@@ -64,14 +64,14 @@ export default function NewReviewPage() {
                 </label>
                 <label className="flex cursor-pointer flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-300 bg-slate-50 px-6 py-10 text-center transition hover:border-indigo-400 hover:bg-indigo-50/40">
                   <span className="text-sm font-semibold text-slate-800">Choose PDF or image</span>
-                  <span className="mt-1 text-xs text-slate-500">Upload a file to extract vendor, number, and total details</span>
+                  <span className="mt-1 text-xs text-slate-500">PDF, PNG, JPG, WEBP, BMP, or GIF. Amounts are currently reviewed in USD.</span>
                   <span className="mt-3 rounded-lg bg-white px-3 py-2 text-xs font-semibold text-indigo-600 shadow-sm">
                     {fileName || "Browse files"}
                   </span>
                   <input
                     id="invoice"
                     type="file"
-                    accept="application/pdf,image/*"
+                    accept=".pdf,.png,.jpg,.jpeg,.webp,.bmp,.gif,application/pdf,image/png,image/jpeg,image/webp,image/bmp,image/gif"
                     className="sr-only"
                     onChange={handleFileSelection}
                   />

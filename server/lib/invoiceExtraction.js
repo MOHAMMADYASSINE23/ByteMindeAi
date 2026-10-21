@@ -127,7 +127,6 @@ function extractInvoiceNumber(text) {
 function extractInvoiceAmount(text) {
   // Prefer labels that usually identify the final payable amount.
   // Match each label in priority order so an earlier subtotal cannot win.
-  const amountPattern = /\$?\s*([0-9][0-9,]*(?:\.\d{1,2})?)/;
   const labels = [
     /\bgrand\s+total\b\s*[:=\-]?\s*\$?\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i,
     /\binvoice\s+total\b\s*[:=\-]?\s*\$?\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i,
@@ -155,6 +154,5 @@ function extractInvoiceAmount(text) {
     return Number.isFinite(numeric) ? numeric : null;
   }
 
-  // Keep the amount regex defined above documented for future format extensions.
-  return amountPattern.test(text) ? null : null;
+  return null;
 }

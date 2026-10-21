@@ -4,6 +4,7 @@ import sql from "../configs/db.js";
 import { requireAuth } from "../middlewares/auth.js";
 import { assessInvoiceRisk } from "../lib/invoiceRisk.js";
 import { extractInvoiceFromFile } from "../lib/invoiceExtraction.js";
+import { isSupportedInvoiceUpload } from "../lib/uploadValidation.js";
 
 const router = Router();
 const upload = multer({
@@ -12,13 +13,12 @@ const upload = multer({
     fileSize: 10 * 1024 * 1024,
   },
   fileFilter: (_req, file, callback) => {
-    const isSupported = file.mimetype.startsWith("image/") || file.mimetype === "application/pdf";
-    if (isSupported) {
+    if (isSupportedInvoiceUpload(file)) {
       callback(null, true);
       return;
     }
 
-    callback(new Error("Only PDF and image files are allowed."));
+    callback(new Error("Upload a PDF, PNG, JPG, WEBP, BMP, or GIF file with a matching file type."));
   },
 });
 
@@ -224,6 +224,23 @@ router.patch("/:id/status", async (req, res) => {
     console.error("Invoice status update failed:", error.message);
     return res.status(500).json({ message: "Could not update the invoice status." });
   }
+});
+
+// Convert upload validation failures into clear client errors instead of generic server errors.
+router.use((error, _req, res, next) => {
+  if (error instanceof multer.MulterError) {
+    const status = error.code === "LIMIT_FILE_SIZE" ? 413 : 400;
+    const message = error.code === "LIMIT_FILE_SIZE"
+      ? "The invoice file must be 10 MB or smaller."
+      : "The uploaded file could not be accepted.";
+    return res.status(status).json({ message, code: error.code });
+  }
+
+  if (error.message?.startsWith("Upload a PDF,")) {
+    return res.status(400).json({ message: error.message });
+  }
+
+  return next(error);
 });
 
 export default router;

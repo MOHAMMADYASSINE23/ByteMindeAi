@@ -202,6 +202,9 @@ function extractInvoiceAmount(text) {
     );
     const match = text.match(pattern);
     if (match?.[1]) {
+      // This app currently stores and scores amounts as USD. Never silently treat
+      // an explicitly non-USD total as dollars.
+      if (containsNonUsdCurrency(match[0])) continue;
       const amount = parseAmount(match[1]);
       if (amount !== null) return amount;
     }
@@ -213,5 +216,10 @@ function extractInvoiceAmount(text) {
     'i',
   );
   const currencyMatch = text.match(currencyPattern);
-  return currencyMatch?.[1] ? parseAmount(currencyMatch[1]) : null;
+  if (!currencyMatch || containsNonUsdCurrency(currencyMatch[0])) return null;
+  return currencyMatch[1] ? parseAmount(currencyMatch[1]) : null;
+}
+
+function containsNonUsdCurrency(value) {
+  return /\b(?:EUR|GBP|CAD|AUD|LBP)\b|[€£¥]/i.test(value);
 }

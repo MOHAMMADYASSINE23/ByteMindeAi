@@ -89,7 +89,7 @@ test('keeps PDF text items on separate lines based on their vertical positions',
     { str: 'Grand Total: $990.00', transform: [1, 0, 0, 1, 40, 640] },
   ]);
 
-  assert.equal(text, 'Northwind Supply Co\\nInvoice # INV-2048\\nGrand Total: $990.00');
+  assert.equal(text, 'Northwind Supply Co\nInvoice # INV-2048\nGrand Total: $990.00');
 
   const result = extractInvoiceMetadata(text);
   assert.equal(result.vendor, 'Northwind Supply Co');

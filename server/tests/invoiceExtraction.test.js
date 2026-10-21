@@ -24,3 +24,33 @@ test('falls back to a clean vendor name when the first line is a heading', () =>
   assert.equal(result.invoiceNumber, '84591');
   assert.equal(result.amount, 2420.75);
 });
+
+test('prefers grand total over subtotal and tax', () => {
+  const text = `Northwind Supply Co
+Invoice # INV-2048
+Subtotal: $900.00
+Tax: $90.00
+Grand Total: $990.00`;
+
+  const result = extractInvoiceMetadata(text);
+
+  assert.equal(result.amount, 990);
+});
+
+test('prefers amount due when multiple total-like values exist', () => {
+  const text = `ACME INDUSTRIES
+Invoice Number: ACME-2048
+Subtotal: $1,200.00
+Total: $1,260.00
+Amount Due: $1,260.00`;
+
+  const result = extractInvoiceMetadata(text);
+
+  assert.equal(result.amount, 1260);
+});
+
+test('returns null when no labeled or currency amount exists', () => {
+  const result = extractInvoiceMetadata('Northwind Supply Co\nInvoice # INV-2048');
+
+  assert.equal(result.amount, null);
+});

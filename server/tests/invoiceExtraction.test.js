@@ -54,3 +54,27 @@ test('returns null when no labeled or currency amount exists', () => {
 
   assert.equal(result.amount, null);
 });
+
+test('extracts an amount labeled with a currency code', () => {
+  const result = extractInvoiceMetadata('ACME INDUSTRIES\nGrand Total: EUR 1,250.50');
+
+  assert.equal(result.amount, 1250.5);
+});
+
+test('extracts European-style amounts with a decimal comma', () => {
+  const result = extractInvoiceMetadata('ACME INDUSTRIES\nTotal Due: 1.250,75 EUR');
+
+  assert.equal(result.amount, 1250.75);
+});
+
+test('extracts currency symbols after the amount', () => {
+  const result = extractInvoiceMetadata('ACME INDUSTRIES\nAmount Due: 2,420.75 €');
+
+  assert.equal(result.amount, 2420.75);
+});
+
+test('supports currency-only fallback when no total label is present', () => {
+  const result = extractInvoiceMetadata('ACME INDUSTRIES\nInvoice # ACME-2048\nEUR 850,00');
+
+  assert.equal(result.amount, 850);
+});

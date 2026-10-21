@@ -2,6 +2,8 @@ import Tesseract from 'tesseract.js';
 import * as pdfjsLib from 'pdfjs-dist/legacy/build/pdf.mjs';
 
 const METADATA_KEYWORDS = /(invoice|amount|total|balance|due|date|payment|bill|receipt|page|po\s*#|order)/i;
+const CURRENCY = '(?:USD|EUR|GBP|CAD|AUD|LBP|[$€£¥])';
+const AMOUNT = '([0-9][0-9,.]*(?:[0-9])?)';
 
 export function extractInvoiceMetadata(text = '') {
   const normalizedText = String(text ?? '')
@@ -124,35 +126,55 @@ function extractInvoiceNumber(text) {
   return genericMatch ? genericMatch[0].trim() : '';
 }
 
+function parseAmount(value) {
+  let normalized = value.replace(/\s/g, '');
+
+  if (normalized.includes(',') && normalized.includes('.')) {
+    // The last separator is treated as the decimal separator.
+    const decimalSeparator = normalized.lastIndexOf(',') > normalized.lastIndexOf('.') ? ',' : '.';
+    const thousandsSeparator = decimalSeparator === ',' ? '.' : ',';
+    normalized = normalized.split(thousandsSeparator).join('');
+    normalized = normalized.replace(decimalSeparator, '.');
+  } else if (normalized.includes(',')) {
+    const decimals = normalized.length - normalized.lastIndexOf(',') - 1;
+    normalized = decimals === 1 || decimals === 2
+      ? normalized.replace(',', '.')
+      : normalized.replace(/,/g, '');
+  }
+
+  const numeric = Number(normalized);
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
 function extractInvoiceAmount(text) {
-  // Prefer labels that usually identify the final payable amount.
-  // Match each label in priority order so an earlier subtotal cannot win.
+  // Prefer final payable totals before less-specific amount labels.
   const labels = [
-    /\bgrand\s+total\b\s*[:=\-]?\s*\$?\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i,
-    /\binvoice\s+total\b\s*[:=\-]?\s*\$?\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i,
-    /\btotal\s+due\b\s*[:=\-]?\s*\$?\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i,
-    /\bamount\s+due\b\s*[:=\-]?\s*\$?\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i,
-    /\bbalance\s+due\b\s*[:=\-]?\s*\$?\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i,
-    /\btotal\b\s*[:=\-]?\s*\$?\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i,
-    /\bamount\b\s*[:=\-]?\s*\$?\s*([0-9][0-9,]*(?:\.\d{1,2})?)/i,
+    'grand\\s+total',
+    'invoice\\s+total',
+    'total\\s+due',
+    'amount\\s+due',
+    'balance\\s+due',
+    'total',
+    'amount',
   ];
 
-  for (const pattern of labels) {
+  for (const label of labels) {
+    const pattern = new RegExp(
+      `\\b${label}\\b\\s*[:=\\-]?\\s*(?:${CURRENCY}\\s*)?${AMOUNT}(?:\\s*${CURRENCY})?`,
+      'i',
+    );
     const match = text.match(pattern);
     if (match?.[1]) {
-      const numeric = Number(match[1].replace(/,/g, ''));
-      if (Number.isFinite(numeric)) {
-        return numeric;
-      }
+      const amount = parseAmount(match[1]);
+      if (amount !== null) return amount;
     }
   }
 
-  // Fallback for documents that only show currency amounts without a clear label.
-  const currencyMatch = text.match(/\$\s*([0-9][0-9,]*(?:\.\d{1,2})?)/);
-  if (currencyMatch?.[1]) {
-    const numeric = Number(currencyMatch[1].replace(/,/g, ''));
-    return Number.isFinite(numeric) ? numeric : null;
-  }
-
-  return null;
+  // Fallback only when a currency marker makes the number identifiable as money.
+  const currencyPattern = new RegExp(
+    `(?:${CURRENCY}\\s*)${AMOUNT}(?:\\s*${CURRENCY})?`,
+    'i',
+  );
+  const currencyMatch = text.match(currencyPattern);
+  return currencyMatch?.[1] ? parseAmount(currencyMatch[1]) : null;
 }

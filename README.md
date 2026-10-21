@@ -1,67 +1,88 @@
 # ByteMindAI Invoice Auditor
 
-Invoice Auditor is a finance workflow MVP for recording invoice metadata, flagging basic risk signals, and tracking review decisions.
+A full-stack invoice review application that helps users organize invoices, surface potential risk signals, and track human review decisions.
+
+> **Current scope:** This project uses deterministic rules and traditional document text extraction. It does not currently use an LLM or RAG, and its risk findings are not accounting or legal advice.
+
+## What it does
+
+- **Accounts and sessions:** Sign up and log in with bcrypt password hashing and HTTP-only session cookies.
+- **Invoice intake:** Enter invoice details manually or upload a PDF/image (up to 10 MB) for metadata extraction.
+- **Document extraction:** Read embedded text from PDFs with PDF.js and use Tesseract OCR for supported images. Extracted vendor, invoice number, and amount are best-effort suggestions, so users can provide or correct values.
+- **Rule-based risk checks:** Flag repeated invoice numbers, higher-value invoices, and invoices that are unusually large compared with recent invoices from the same vendor.
+- **Review workflow:** Browse invoices, inspect findings, add review notes, and update a decision status.
+- **Per-user data isolation:** Invoice queries are scoped to the authenticated user.
+- **Persistent review context:** Store findings, status history, vendor-history snapshots, and review notes in PostgreSQL.
+
+Risk findings help prioritize human review. They do not automatically prove fraud or make an approval decision.
+
+## Tech stack
+
+| Area | Technology |
+| --- | --- |
+| Frontend | Next.js App Router, React, TypeScript, Tailwind CSS |
+| API | Node.js, Express |
+| Database | PostgreSQL on Neon |
+| Authentication | bcryptjs, random session tokens, HTTP-only cookies |
+| PDF text extraction | PDF.js |
+| Image OCR | Tesseract.js |
+| Tests | Node.js built-in test runner and API smoke tests |
 
 ## Project structure
 
-- `frontend/` — Next.js App Router application
-- `server/` — Express API, custom session authentication, and PostgreSQL persistence
-
-The old Vite AI-tools client is not part of the active application.
+- `frontend/` — Next.js web application
+- `server/` — Express API, authentication, invoice routes, extraction and risk logic, tests
 
 ## Run locally
 
-Install dependencies:
+### 1. Configure the API
 
-```bash
-cd server
-npm install
-cd ../frontend
-npm install
+Create `server/.env` using `server/.env.example` as a template:
+
+```env
+DATABASE_URL=your_neon_postgres_connection_string
+PORT=5000
+FRONTEND_URL=http://localhost:3000,http://localhost:5173
 ```
 
-Configure `server/.env` with `DATABASE_URL` for PostgreSQL/Neon. Use `server/.env.example` as the template. Optional settings are `PORT` (default `5000`) and `FRONTEND_URL` (default `http://localhost:3000,http://localhost:5173`). The API initializes the user, session, and invoice tables at startup.
+Keep the real database URL private. The API initializes the user, session, and invoice tables when it starts.
 
-Run the API in one terminal:
+### 2. Install and start the API
 
 ```bash
 cd server
+npm install
 npm run server
 ```
 
-Run the web app in another terminal:
+### 3. Install and start the frontend
+
+In a second terminal:
 
 ```bash
 cd frontend
+npm install
 npm run dev
 ```
 
-Open `http://localhost:3000`, create an account, submit an invoice, then open it from the dashboard to inspect findings and try approve, reject, or escalate. Authentication uses bcrypt password hashes and an HTTP-only session cookie. Set `NEXT_PUBLIC_API_URL` to the API origin when deploying the frontend separately.
-
-## Current scope
-
-Invoice metadata and risk findings are persisted per user. Starter rules flag repeated invoice numbers and invoice totals at or above `$5,000` and `$10,000`. The dashboard filters reviews by risk/status, and each invoice has a detail page with a persisted decision status.
-
-This MVP does not upload or store document bytes, extract fields with OCR, compare historical vendor prices, or record a reviewer audit trail. The selected filename alone is stored. Risk checks are deterministic starter rules, not AI advice or an accounting decision.
+Open [http://localhost:3000](http://localhost:3000). Create an account, submit an invoice, and review its findings. When deploying the frontend separately, configure `NEXT_PUBLIC_API_URL` to point to the API origin.
 
 ## Tests
 
-Run backend unit tests without a running API:
+Run backend unit tests:
 
 ```bash
 cd server
 npm test
 ```
 
-For live integration checks, keep the API and database running in one terminal and run these from another:
+For API smoke tests, keep the API and database running and use a second terminal:
 
 ```bash
 cd server
 npm run smoke:api
 npm run smoke:detail
 ```
-
-Each smoke test creates a temporary user and removes it afterward.
 
 Build the frontend:
 
@@ -70,6 +91,15 @@ cd frontend
 npm run build
 ```
 
-## Credential safety
+## Current limitations
 
-Keep credentials in ignored local environment files and never commit them. Revoke and rotate any real credentials that were previously committed or shared; removing a key from the current checkout does not remove it from Git history.
+- Extraction is best-effort and currently supports English OCR; extracted values should be checked before saving.
+- Uploaded document bytes are processed in memory and are not retained as a stored invoice file. The app stores the document name and extracted invoice metadata.
+- Risk rules are starter heuristics. Thresholds and vendor-history comparisons are not a substitute for an organization's payment policy.
+- No LLM-powered extraction or explanation, RAG retrieval, or automated accounting decision is currently implemented.
+
+## Security notes
+
+- Keep secrets in local environment files and never commit them.
+- Rotate any real credentials that were ever exposed; deleting a key from the latest version does not remove it from Git history.
+- Treat invoice documents and financial metadata as sensitive data when testing or deploying.

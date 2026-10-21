@@ -1,13 +1,26 @@
 import { hashToken, SESSION_COOKIE } from "../lib/session.js";
 import sql from "../configs/db.js";
 
-// Simple in-memory rate limiter
+// Simple in-memory rate limiter. Expired entries are pruned periodically so
+// one-off client IPs cannot leave stale keys in memory forever.
 const rateLimitStore = new Map();
+let requestsSinceCleanup = 0;
+
+function pruneExpiredRateLimits(now) {
+    requestsSinceCleanup += 1;
+    if (requestsSinceCleanup < 100) return;
+    requestsSinceCleanup = 0;
+
+    for (const [key, entry] of rateLimitStore) {
+        if (now >= entry.resetTime) rateLimitStore.delete(key);
+    }
+}
 
 export const rateLimiter = (maxRequests = 10, windowMs = 15 * 60 * 1000) => { // 10 requests per 15 minutes
     return (req, res, next) => {
         const key = req.user?.id || req.ip || 'anonymous';
         const now = Date.now();
+        pruneExpiredRateLimits(now);
 
         if (!rateLimitStore.has(key)) {
             rateLimitStore.set(key, { count: 0, resetTime: now + windowMs });

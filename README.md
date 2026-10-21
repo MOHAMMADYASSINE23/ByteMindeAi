@@ -8,7 +8,7 @@ A full-stack invoice review application that helps users organize invoices, surf
 
 - **Accounts and sessions:** Sign up and log in with bcrypt password hashing and HTTP-only session cookies.
 - **Invoice intake:** Enter invoice details manually or upload a PDF/image (up to 10 MB) for metadata extraction.
-- **Document extraction:** Read embedded text from PDFs with PDF.js and use Tesseract OCR for supported images. Extracted vendor, invoice number, and amount are best-effort suggestions, so users can provide or correct values.
+- **Document extraction:** Read embedded text from PDFs with PDF.js and use Tesseract OCR for supported images. Extraction attempts to preserve PDF line structure and recognizes common currency symbols/codes and decimal formats. Extracted vendor, invoice number, and amount are best-effort suggestions, so users can provide or correct values.
 - **Rule-based risk checks:** Flag repeated invoice numbers, higher-value invoices, and invoices that are unusually large compared with recent invoices from the same vendor.
 - **Review workflow:** Browse invoices, inspect findings, add review notes, and update a decision status.
 - **Per-user data isolation:** Invoice queries are scoped to the authenticated user.

@@ -63,11 +63,48 @@ async function extractPdfText(buffer) {
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber += 1) {
     const page = await pdf.getPage(pageNumber);
     const content = await page.getTextContent();
-    const text = content.items.map((item) => item.str ?? '').join(' ');
-    pages.push(text);
+    pages.push(formatPdfTextItems(content.items));
   }
 
   return pages.join('\n');
+}
+
+// Keep PDF text on separate visual lines so vendor detection doesn't treat an entire
+// page as one long sentence. PDF.js provides each text item's vertical position.
+export function formatPdfTextItems(items = []) {
+  const lines = [];
+  let currentLine = [];
+  let currentY = null;
+
+  for (const item of items) {
+    const value = String(item?.str ?? '').trim();
+    if (!value) continue;
+
+    const y = Number(item?.transform?.[5]);
+    const hasPosition = Number.isFinite(y);
+
+    if (
+      currentLine.length > 0 &&
+      hasPosition &&
+      currentY !== null &&
+      Math.abs(y - currentY) > 2
+    ) {
+      lines.push(currentLine.join(' '));
+      currentLine = [];
+    }
+
+    currentLine.push(value);
+
+    if (hasPosition) {
+      currentY = y;
+    }
+  }
+
+  if (currentLine.length > 0) {
+    lines.push(currentLine.join(' '));
+  }
+
+  return lines.join('\\n');
 }
 
 async function extractImageText(buffer) {

@@ -8,7 +8,7 @@ A full-stack invoice review application that helps users organize invoices, surf
 
 - **Accounts and sessions:** Sign up and log in with bcrypt password hashing and HTTP-only session cookies.
 - **Invoice intake:** Enter invoice details manually or upload a PDF/image (up to 10 MB) for metadata extraction.
-- **Document extraction:** Read embedded text from PDFs with PDF.js and use Tesseract OCR for supported images. Extraction attempts to preserve PDF line structure and recognizes common currency symbols/codes and decimal formats. Extracted vendor, invoice number, and amount are best-effort suggestions, so users can provide or correct values.
+- **Document extraction:** Read embedded text from PDFs with PDF.js and use Tesseract OCR for supported images. Extraction attempts to preserve PDF line structure and recognizes common US dollar amount formats. Explicitly non-USD totals are not treated as USD. The current data model and risk thresholds are USD-only, so foreign-currency invoices must not be scored until currency-aware storage and rules are implemented. Extracted vendor, invoice number, and amount are best-effort suggestions, so users should verify them before saving.
 - **Rule-based risk checks:** Flag repeated invoice numbers, higher-value invoices, and invoices that are unusually large compared with recent invoices from the same vendor.
 - **Review workflow:** Browse invoices, inspect findings, add review notes, and update a decision status.
 - **Per-user data isolation:** Invoice queries are scoped to the authenticated user.
@@ -94,6 +94,7 @@ npm run build
 ## Current limitations
 
 - Extraction is best-effort and currently supports English OCR; extracted values should be checked before saving.
+- Amount storage and high-value thresholds are USD-only. Full multi-currency support is not implemented.
 - Uploaded document bytes are processed in memory and are not retained as a stored invoice file. The app stores the document name and extracted invoice metadata.
 - Risk rules are starter heuristics. Thresholds and vendor-history comparisons are not a substitute for an organization's payment policy.
 - No LLM-powered extraction or explanation, RAG retrieval, or automated accounting decision is currently implemented.

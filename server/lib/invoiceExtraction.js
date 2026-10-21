@@ -104,7 +104,7 @@ export function formatPdfTextItems(items = []) {
     lines.push(currentLine.join(' '));
   }
 
-  return lines.join('\\n');
+  return lines.join('\n');
 }
 
 async function extractImageText(buffer) {

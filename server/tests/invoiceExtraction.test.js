@@ -49,6 +49,29 @@ Amount Due: $1,260.00`;
   assert.equal(result.amount, 1260);
 });
 
+test('prefers balance due over a higher invoice total when the balance is lower', () => {
+  const text = `ACME INDUSTRIES
+Invoice Number: ACME-2048
+Invoice Total: $1,260.00
+Payments Received: $800.00
+Balance Due: $460.00`;
+
+  const result = extractInvoiceMetadata(text);
+
+  assert.equal(result.amount, 460);
+});
+
+test('prefers total due over a subtotal', () => {
+  const text = `Northwind Supply Co
+Subtotal: $800.00
+Tax: $80.00
+Total Due: $880.00`;
+
+  const result = extractInvoiceMetadata(text);
+
+  assert.equal(result.amount, 880);
+});
+
 test('returns null when no labeled or currency amount exists', () => {
   const result = extractInvoiceMetadata('Northwind Supply Co\nInvoice # INV-2048');
 
@@ -78,7 +101,6 @@ test('does not extract a foreign-currency fallback as a USD amount', () => {
 
   assert.equal(result.amount, null);
 });
-
 
 test('keeps PDF text items on separate lines based on their vertical positions', () => {
   const text = formatPdfTextItems([

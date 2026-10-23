@@ -184,13 +184,14 @@ function parseAmount(value) {
 }
 
 function extractInvoiceAmount(text) {
-  // Prefer final payable totals before less-specific amount labels.
+  // Prefer the amount payable now, while retaining grand total as the strongest
+  // overall invoice-total signal when it is explicitly present.
   const labels = [
     'grand\\s+total',
-    'invoice\\s+total',
-    'total\\s+due',
     'amount\\s+due',
     'balance\\s+due',
+    'total\\s+due',
+    'invoice\\s+total',
     'total',
     'amount',
   ];

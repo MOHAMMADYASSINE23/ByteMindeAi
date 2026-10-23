@@ -198,7 +198,7 @@ function extractInvoiceAmount(text) {
 
   for (const label of labels) {
     const pattern = new RegExp(
-      `\\b${label}\\b\\s*[:=\\-]?\\s*(?:${CURRENCY}\\s*)?${AMOUNT}(?:\\s*${CURRENCY})?`,
+      `\\b${label}\\b\\s*[:=\\-]?\\s*(?:${CURRENCY}\\s*)?${AMOUNT}(?![0-9,.]|\\s*[-/]\\s*\\d)(?:\\s*${CURRENCY})?`,
       'i',
     );
     const match = text.match(pattern);

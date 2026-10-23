@@ -78,6 +78,14 @@ test('returns null when no labeled or currency amount exists', () => {
   assert.equal(result.amount, null);
 });
 
+test('does not misread a date after an amount label as the invoice amount', () => {
+  const dateOnly = extractInvoiceMetadata('ACME INDUSTRIES\\nAmount Due: 2026-10-10');
+  const slashDate = extractInvoiceMetadata('ACME INDUSTRIES\\nTotal Due: 10/23/2026');
+
+  assert.equal(dateOnly.amount, null);
+  assert.equal(slashDate.amount, null);
+});
+
 test('extracts an amount explicitly labeled in USD', () => {
   const result = extractInvoiceMetadata('ACME INDUSTRIES\nGrand Total: USD 1,250.50');
 

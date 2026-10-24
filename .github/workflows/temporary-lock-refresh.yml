@@ -1,0 +1,44 @@
+name: Temporary dependency lock refresh
+
+on:
+  push:
+    branches: [ci/dependency-audit-refresh]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dependency-lock-refresh-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  refresh-lockfiles:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out branch
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ github.ref_name }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Node.js
+        uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Refresh backend lockfile
+        working-directory: server
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Refresh frontend lockfile
+        working-directory: frontend
+        run: npm install --package-lock-only --ignore-scripts --no-audit --no-fund
+      - name: Commit lockfile updates
+        run: |
+          if git diff --quiet -- server/package-lock.json frontend/package-lock.json; then
+            echo "Lockfiles are already current."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add server/package-lock.json frontend/package-lock.json
+          git commit -m "chore: refresh locks for security patches"
+          git push origin HEAD:${{ github.ref_name }}

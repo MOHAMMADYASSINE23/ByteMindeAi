@@ -5,6 +5,7 @@ import { requireAuth } from "../middlewares/auth.js";
 import { assessInvoiceRisk } from "../lib/invoiceRisk.js";
 import { extractInvoiceFromFile } from "../lib/invoiceExtraction.js";
 import { isSupportedInvoiceUpload } from "../lib/uploadValidation.js";
+import { resolveInvoiceAmount } from "../lib/invoiceAmount.js";
 
 const router = Router();
 const upload = multer({
@@ -56,8 +57,7 @@ router.post("/", upload.single("invoiceFile"), async (req, res) => {
   const vendor = vendorInput || extractedData?.vendor || "";
   const invoiceNumber = invoiceNumberInput || extractedData?.invoiceNumber || "";
   const documentName = documentNameInput || extractedData?.documentName || req.file?.originalname || "";
-  const amount = Number(req.body.amount);
-  const extractedAmount = Number.isFinite(amount) ? amount : extractedData?.amount ?? Number.NaN;
+  const extractedAmount = resolveInvoiceAmount(req.body.amount, extractedData?.amount);
 
   if (vendor.length < 2 || vendor.length > 160) {
     return res.status(400).json({ message: "Vendor must be between 2 and 160 characters." });

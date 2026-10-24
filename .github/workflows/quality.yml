@@ -33,7 +33,7 @@ jobs:
           npm audit --json > npm-audit.json || true
           node -e 'const a = require("./npm-audit.json"); const v = a.metadata?.vulnerabilities; console.log("Backend full dependency audit:", JSON.stringify(v || a.error || {}, null, 2));'
           npm audit --omit=dev --json > npm-audit-production.json || true
-          node -e 'const a = require("./npm-audit-production.json"); const v = a.metadata?.vulnerabilities; const findings = Object.entries(a.vulnerabilities || {}).map(([name, item]) => ({name, severity:item.severity, range:item.range, fixAvailable:item.fixAvailable, via:item.via})); console.log("Backend production dependency audit:", JSON.stringify({summary:v || a.error || {}, findings}, null, 2)); if (v?.critical > 0 || v?.high > 0) process.exit(1); if (v?.moderate > 0) console.warn("Moderate production dependency findings remain.");'
+          node -e 'const a = require("./npm-audit-production.json"); const v = a.metadata?.vulnerabilities; const findings = Object.entries(a.vulnerabilities || {}).map(([name, item]) => ({name, severity:item.severity, range:item.range, fixAvailable:item.fixAvailable, via:item.via})); console.log("Backend production dependency audit:", JSON.stringify({summary:v || a.error || {}, findings}, null, 2)); if (!v) { console.error("Production dependency audit did not return a vulnerability summary."); process.exit(1); } if (v.critical > 0 || v.high > 0) process.exit(1); if (v.moderate > 0) console.warn("Moderate production dependency findings remain.");'
       - name: Run unit tests
         run: npm test
 
@@ -59,7 +59,7 @@ jobs:
           npm audit --json > npm-audit.json || true
           node -e 'const a = require("./npm-audit.json"); const v = a.metadata?.vulnerabilities; console.log("Frontend full dependency audit:", JSON.stringify(v || a.error || {}, null, 2));'
           npm audit --omit=dev --json > npm-audit-production.json || true
-          node -e 'const a = require("./npm-audit-production.json"); const v = a.metadata?.vulnerabilities; const findings = Object.entries(a.vulnerabilities || {}).map(([name, item]) => ({name, severity:item.severity, range:item.range, fixAvailable:item.fixAvailable, via:item.via})); console.log("Frontend production dependency audit:", JSON.stringify({summary:v || a.error || {}, findings}, null, 2)); if (v?.critical > 0 || v?.high > 0) process.exit(1); if (v?.moderate > 0) console.warn("Moderate production dependency findings remain.");'
+          node -e 'const a = require("./npm-audit-production.json"); const v = a.metadata?.vulnerabilities; const findings = Object.entries(a.vulnerabilities || {}).map(([name, item]) => ({name, severity:item.severity, range:item.range, fixAvailable:item.fixAvailable, via:item.via})); console.log("Frontend production dependency audit:", JSON.stringify({summary:v || a.error || {}, findings}, null, 2)); if (!v) { console.error("Production dependency audit did not return a vulnerability summary."); process.exit(1); } if (v.critical > 0 || v.high > 0) process.exit(1); if (v.moderate > 0) console.warn("Moderate production dependency findings remain.");'
       - name: Run ESLint
         run: npm run lint
       - name: Build production application
